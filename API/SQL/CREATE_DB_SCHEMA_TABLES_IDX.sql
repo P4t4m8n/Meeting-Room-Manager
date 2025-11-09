@@ -15,8 +15,7 @@ FROM sys.schemas
 WHERE name = 'MeetingSchema')
     EXEC('CREATE SCHEMA MeetingSchema');
 
-    GO
-
+GO
 
 IF NOT EXISTS (SELECT *
 FROM sys.tables t
@@ -24,7 +23,7 @@ FROM sys.tables t
 WHERE s.name = 'MeetingSchema' AND t.name = 'Rooms')
 BEGIN
 
-    CREATE TABLE Rooms
+    CREATE TABLE MeetingSchema.Rooms
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         Name NVARCHAR(100) NOT NULL,
@@ -48,7 +47,7 @@ FROM sys.tables t
 WHERE s.name = 'MeetingSchema' AND t.name = 'Users'
 )
 BEGIN
-    CREATE TABLE Users
+    CREATE TABLE MeetingSchema.Users
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         Email NVARCHAR(255) NOT NULL UNIQUE,
@@ -56,7 +55,11 @@ BEGIN
         Role NVARCHAR(20) NOT NULL DEFAULT 'User',
         CONSTRAINT chk_user_role CHECK (Role IN ('User', 'Admin', 'Maintenance')),
 
-        CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
+        PasswordHash VARBINARY (MAX) ,
+        PasswordSalt VARBINARY (MAX) ,
+
+        CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+        UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
     );
 
 END
@@ -67,7 +70,7 @@ FROM sys.tables t
 WHERE s.name = 'MeetingSchema' AND t.name = 'Bookings'
 )
 BEGIN
-    CREATE TABLE Bookings
+    CREATE TABLE MeetingSchema.Bookings
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         RoomId UNIQUEIDENTIFIER NOT NULL,
@@ -81,8 +84,8 @@ BEGIN
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
         UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
 
-        CONSTRAINT FK_Bookings_Rooms FOREIGN KEY (RoomId) REFERENCES Rooms(RoomId),
-        CONSTRAINT FK_Bookings_Users FOREIGN KEY (UserId) REFERENCES Users(Id)
+        CONSTRAINT FK_Bookings_Rooms FOREIGN KEY (RoomId) REFERENCES MeetingSchema.Rooms(Id),
+        CONSTRAINT FK_Bookings_Users FOREIGN KEY (UserId) REFERENCES MeetingSchema.Users(Id)
     );
 
 END
@@ -90,10 +93,10 @@ GO
 IF NOT EXISTS (SELECT *
 FROM sys.tables t
     JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name = 'MeetingSchema' AND t.name = 'Bookings'
+WHERE s.name = 'MeetingSchema' AND t.name = 'BookingAttendees'
 )
 BEGIN
-    CREATE TABLE BookingAttendees
+    CREATE TABLE MeetingSchema.BookingAttendees
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         BookingId UNIQUEIDENTIFIER NOT NULL,
@@ -102,7 +105,7 @@ BEGIN
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
         UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
 
-        CONSTRAINT FK_BookingAttendees_Bookings FOREIGN KEY (BookingId) REFERENCES Bookings(Id) ON DELETE CASCADE
+        CONSTRAINT FK_BookingAttendees_Bookings FOREIGN KEY (BookingId) REFERENCES MeetingSchema.Bookings(Id) ON DELETE CASCADE
     );
 
 END
@@ -110,23 +113,23 @@ GO
 IF NOT EXISTS (SELECT *
 FROM sys.tables t
     JOIN sys.schemas s ON t.schema_id = s.schema_id
-WHERE s.name = 'MeetingSchema' AND t.name = 'Bookings'
+WHERE s.name = 'MeetingSchema' AND t.name = 'MaintenanceRequests'
 )
 BEGIN
-    CREATE TABLE MaintenanceRequests
+    CREATE TABLE MeetingSchema.MaintenanceRequests
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
         RoomId UNIQUEIDENTIFIER NOT NULL,
         BookingId UNIQUEIDENTIFIER NULL,
         Description NVARCHAR(1000) NOT NULL,
         Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
-        CONSTRAINT chk_maintenance_requests_status CHECK (Status IN ('Pending', 'InProgress', 'Completed')),
+        CONSTRAINT chk_maintenance_requests_status CHECK (Status IN ('Pending', 'InProgress', 'Completed','Canceled')),
         ReportedBy NVARCHAR(255) NOT NULL,
         ReportedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
         CompletedAt DATETIME2 NULL,
 
-        CONSTRAINT FK_MaintenanceRequests_Rooms FOREIGN KEY (RoomId) REFERENCES Rooms(RoomId),
-        CONSTRAINT FK_MaintenanceRequests_Bookings FOREIGN KEY (BookingId) REFERENCES Bookings(Id)
+        CONSTRAINT FK_MaintenanceRequests_Rooms FOREIGN KEY (RoomId) REFERENCES MeetingSchema.Rooms(Id),
+        CONSTRAINT FK_MaintenanceRequests_Bookings FOREIGN KEY (BookingId) REFERENCES MeetingSchema.Bookings(Id)
     );
 
 END
@@ -135,9 +138,10 @@ GO
 
 IF NOT EXISTS (SELECT *
 FROM sys.indexes
-WHERE name = 'IX_Bookings_RoomId_StartTime' AND object_id = OBJECT_ID('MeetingSchema.Bookings'))
+WHERE name = '
+    IX_Bookings_RoomId_StartTime' AND object_id = OBJECT_ID('MeetingSchema.Bookings'))
 BEGIN
-    CREATE INDEX IX_Bookings_RoomId_StartTime ON Bookings(RoomId, StartTime, EndTime);
+    CREATE INDEX IX_Bookings_RoomId_StartTime ON MeetingSchema.Bookings(RoomId, StartTime, EndTime);
 END
 
 GO
@@ -145,7 +149,7 @@ IF NOT EXISTS (SELECT *
 FROM sys.indexes
 WHERE name = 'IX_Bookings_UserId' AND object_id = OBJECT_ID('MeetingSchema.Bookings'))
 BEGIN
-    CREATE INDEX IX_Bookings_UserId ON Bookings(UserId);
+    CREATE INDEX IX_Bookings_UserId ON MeetingSchema.Bookings(UserId);
 END
 
 GO
@@ -153,7 +157,7 @@ IF NOT EXISTS (SELECT *
 FROM sys.indexes
 WHERE name = 'IX_MaintenanceRequests_RoomId_Status' AND object_id = OBJECT_ID('MeetingSchema.MaintenanceRequests'))
 BEGIN
-    CREATE INDEX IX_MaintenanceRequests_RoomId_Status ON MaintenanceRequests(RoomId, Status);
+    CREATE INDEX IX_MaintenanceRequests_RoomId_Status ON MeetingSchema.MaintenanceRequests(RoomId, Status);
 END
 
 GO
@@ -161,7 +165,7 @@ IF NOT EXISTS (SELECT *
 FROM sys.indexes
 WHERE name = 'IX_BookingAttendees_BookingId' AND object_id = OBJECT_ID('MeetingSchema.BookingAttendees'))
 BEGIN
-    CREATE INDEX IX_BookingAttendees_BookingId ON BookingAttendees(BookingId);
+    CREATE INDEX IX_BookingAttendees_BookingId ON MeetingSchema.BookingAttendees(BookingId);
 END
 
 GO

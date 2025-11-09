@@ -1,8 +1,6 @@
-using API.Enums;
-
-namespace API.Models
+namespace API.Dtos.Room
 {
-    public class Room : Model
+    public class RoomCreateDto 
     {
         public required string Name { get; set; }
         public required int Capacity { get; set; }
@@ -11,7 +9,5 @@ namespace API.Models
         public required bool HasTeamMeeting { get; set; }
         public required bool HasConferenceCall { get; set; }
         public required string ImageUrl { get; set; }
-        public required RoomStatus Status { get; set; }
-
     }
 }

@@ -1,19 +1,19 @@
+using API.Dtos.Room;
+using API.Dtos.User;
 using API.Enums;
 
-namespace API.Models
+namespace API.Dtos.Booking
 {
-    public class Booking : Model
+    public class BookingDto : Dto
     {
-        public Guid RoomId { get; set; }
-        public Guid UserId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
         public int BufferMinutes { get; set; }
         public RoomBookingStatus Status { get; set; } = RoomBookingStatus.Active;
         public string? CalendarEventId { get; set; }
         // Navigation properties
-        public Room? Room { get; set; }
-        public User? User { get; set; }
-        public List<BookingAttendee>? Attendees { get; set; }
+        public RoomDto? Room { get; set; }
+        public UserDto? User { get; set; }
+        public List<BookingAttendeeDto>? Attendees { get; set; }
     }
 }

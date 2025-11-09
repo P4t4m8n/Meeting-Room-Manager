@@ -1,0 +1,64 @@
+using System.Net;
+using System.Text.Json;
+using API.Exceptions;
+using Microsoft.AspNetCore.Mvc;
+
+namespace API.Middleware
+{
+    public class ErrorHandlingMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly ILogger<ErrorHandlingMiddleware> _logger;
+
+        public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
+        {
+            _next = next;
+            _logger = logger;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            try
+            {
+                await _next(context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An unhandled exception has occurred.");
+                await HandleExceptionAsync(context, ex);
+            }
+        }
+
+        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        {
+            var code = HttpStatusCode.InternalServerError; // 500 if unexpected
+            var problemDetails = new ProblemDetails
+            {
+                Status = (int)code,
+                Title = "An unexpected error occurred.",
+                Detail = "An internal server error has occurred. Please try again later."
+            };
+
+            switch (exception)
+            {
+                case BookingConflictException e:
+                    problemDetails.Status = (int)HttpStatusCode.Conflict;
+                    problemDetails.Title = "Booking Conflict";
+                    problemDetails.Detail = e.Message;
+                    break;
+                case ArgumentException e:
+                    problemDetails.Status = (int)HttpStatusCode.BadRequest;
+                    problemDetails.Title = "Invalid Argument";
+                    problemDetails.Detail = e.Message;
+                    break;
+                // Add other custom exception types here
+            }
+
+            context.Response.ContentType = "application/problem+json";
+            context.Response.StatusCode = problemDetails.Status.Value;
+
+            var result = JsonSerializer.Serialize(problemDetails);
+            return context.Response.WriteAsync(result);
+        }
+    }
+}

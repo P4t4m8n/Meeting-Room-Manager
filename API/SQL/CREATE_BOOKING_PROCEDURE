@@ -1,0 +1,236 @@
+CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Select_Many
+    @StartDate DATETIME2 = NULL,
+    @EndDate DATETIME2 = NULL,
+    @RoomId UNIQUEIDENTIFIER = NULL,
+    @Status NVARCHAR(20) = NULL,
+    @UserId UNIQUEIDENTIFIER = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        b.Id,
+        b.RoomId,
+        b.UserId,
+        b.StartTime,
+        b.EndTime,
+        b.BufferMinutes,
+        b.Status,
+        b.CalendarEventId,
+        b.CreatedAt,
+        b.UpdatedAt,
+        JSON_QUERY(
+            (SELECT r.Id, r.Name, r.Floor, r.Capacity, r.HasProjector, r.HasTeamMeeting, r.HasConferenceCall, r.ImageUrl
+        FROM MeetingSchema.Rooms r
+        WHERE r.Id = b.RoomId
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS Room,
+        JSON_QUERY(
+            (SELECT u.Id, u.Email, u.Name, u.Role
+        FROM MeetingSchema.Users u
+        WHERE u.Id = b.UserId
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS [User],
+        JSON_QUERY(
+            (SELECT ba.Id, ba.Email, ba.Name
+        FROM MeetingSchema.BookingAttendees ba
+        WHERE ba.BookingId = b.Id
+        FOR JSON PATH)
+        ) AS Attendees
+    FROM MeetingSchema.Bookings b
+    WHERE 
+        (@StartDate IS NULL OR b.StartTime >= @StartDate)
+        AND (@EndDate IS NULL OR b.EndTime <= @EndDate)
+        AND (@RoomId IS NULL OR b.RoomId = @RoomId)
+        AND (@Status IS NULL OR b.Status = @Status)
+        AND (@UserId IS NULL OR b.UserId = @UserId)
+    ORDER BY b.StartTime DESC
+    FOR JSON PATH;
+    END
+GO
+
+
+
+    CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Select_By_Id
+        @BookingId UNIQUEIDENTIFIER
+    AS
+    BEGIN
+        SET NOCOUNT ON;
+
+        SELECT
+            b.Id,
+            b.RoomId,
+            b.UserId,
+            b.StartTime,
+            b.EndTime,
+            b.BufferMinutes,
+            b.Status,
+            b.CalendarEventId,
+            b.CreatedAt,
+            b.UpdatedAt,
+            JSON_QUERY(
+            (SELECT r.Id, r.Name, r.Floor, r.Capacity, r.HasProjector, r.HasTeamMeeting, r.HasConferenceCall, r.ImageUrl
+            FROM MeetingSchema.Rooms r
+            WHERE r.Id = b.RoomId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS Room,
+            JSON_QUERY(
+            (SELECT u.Id, u.Email, u.Name, u.Role
+            FROM MeetingSchema.Users u
+            WHERE u.Id = b.UserId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS [User],
+            JSON_QUERY(
+            (SELECT ba.Id, ba.Email, ba.Name
+            FROM MeetingSchema.BookingAttendees ba
+            WHERE ba.BookingId = b.Id
+            FOR JSON PATH)
+        ) AS Attendees
+        FROM MeetingSchema.Bookings b
+        WHERE 
+            b.Id = @BookingId
+        ORDER BY b.StartTime DESC
+        FOR JSON PATH;
+
+        END
+GO
+
+        CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Create
+            @RoomId UNIQUEIDENTIFIER,
+            @UserId UNIQUEIDENTIFIER,
+            @StartTime DATETIME2,
+            @EndTime DATETIME2,
+            @BufferMinutes INT,
+            @Attendees NVARCHAR(MAX) = NULL
+        AS
+        BEGIN
+            SET NOCOUNT ON;
+            BEGIN TRANSACTION;
+
+            DECLARE @BookingId UNIQUEIDENTIFIER = NEWID();
+            DECLARE @Now DATETIME2 = GETDATE();
+
+            BEGIN TRY
+        INSERT INTO MeetingSchema.Bookings
+                (Id, RoomId, UserId, StartTime, EndTime, BufferMinutes, Status)
+            VALUES
+                (@BookingId, @RoomId, @UserId, @StartTime, @EndTime, @BufferMinutes, 'Active');
+        
+        IF @Attendees IS NOT NULL
+        BEGIN
+                INSERT INTO MeetingSchema.BookingAttendees
+                    (Id, BookingId, Email, Name)
+                SELECT
+                    NEWID(),
+                    @BookingId,
+                    JSON_VALUE(value, '$.Email'),
+                    JSON_VALUE(value, '$.Name')
+                FROM OPENJSON(@Attendees);
+            END
+        
+            SELECT
+                b.Id,
+                b.RoomId,
+                b.UserId,
+                b.StartTime,
+                b.EndTime,
+                b.BufferMinutes,
+                b.Status,
+                b.CalendarEventId,
+                b.CreatedAt,
+                b.UpdatedAt,
+                JSON_QUERY(
+            (SELECT r.Id, r.Name, r.Floor, r.Capacity, r.HasProjector, r.HasTeamMeeting, r.HasConferenceCall, r.ImageUrl
+                FROM MeetingSchema.Rooms r
+                WHERE r.Id = b.RoomId
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS Room,
+                JSON_QUERY(
+            (SELECT u.Id, u.Email, u.Name, u.Role
+                FROM MeetingSchema.Users u
+                WHERE u.Id = b.UserId
+                FOR JSON PATH, WITHOUT_ARRAY_WRAPPER)
+        ) AS [User],
+                JSON_QUERY(
+            (SELECT ba.Id, ba.Email, ba.Name
+                FROM MeetingSchema.BookingAttendees ba
+                WHERE ba.BookingId = b.Id
+                FOR JSON PATH)
+        ) AS Attendees
+            FROM MeetingSchema.Bookings b
+            WHERE 
+            b.Id = @BookingId
+            ORDER BY b.StartTime DESC
+            FOR JSON PATH;
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+            END
+GO
+
+            CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Update
+                @BookingId UNIQUEIDENTIFIER,
+                @UserId UNIQUEIDENTIFIER,
+                @StartTime DATETIME2,
+                @EndTime DATETIME2,
+                @BufferMinutes INT,
+                @Status NVARCHAR(20) = NULL,
+                @Attendees NVARCHAR(MAX) = NULL
+            AS
+            BEGIN
+                SET NOCOUNT ON;
+                BEGIN TRANSACTION;
+
+                BEGIN TRY
+        UPDATE MeetingSchema.Bookings
+        SET 
+            StartTime = CASE WHEN @StartTime IS NOT NULL THEN @StartTime ELSE StartTime END,
+            EndTime = CASE WHEN @EndTime IS NOT NULL THEN @EndTime ELSE EndTime END,
+            BufferMinutes = CASE WHEN @BufferMinutes IS NOT NULL THEN @BufferMinutes ELSE BufferMinutes END,
+            Status = CASE WHEN @Status IS NOT NULL THEN @Status ELSE Status END
+        WHERE Id = @BookingId;
+        
+        IF @Attendees IS NOT NULL
+        BEGIN
+                    --Lazy way to sync attendees: delete all and re-insert
+                    DELETE FROM MeetingSchema.BookingAttendees WHERE BookingId = @BookingId;
+
+                    INSERT INTO MeetingSchema.BookingAttendees
+                        (Id, BookingId, Email, Name, CreatedAt, UpdatedAt)
+                    SELECT
+                        NEWID(),
+                        @BookingId,
+                        JSON_VALUE(value, '$.Email'),
+                        JSON_VALUE(value, '$.Name'),
+                        @Now,
+                        @Now
+                    FROM OPENJSON(@Attendees);
+                END
+        
+        COMMIT TRANSACTION;
+        RETURN 1;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+            END
+GO
+
+            CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Cancel
+                @BookingId UNIQUEIDENTIFIER
+            AS
+            BEGIN
+                SET NOCOUNT ON;
+
+                UPDATE MeetingSchema.Bookings
+    SET Status = 'Cancelled', UpdatedAt = GETDATE()
+    WHERE Id = @BookingId;
+
+                RETURN @@ROWCOUNT;
+            END
+GO
