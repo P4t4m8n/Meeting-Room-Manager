@@ -31,7 +31,7 @@ namespace API.Middleware
 
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var code = HttpStatusCode.InternalServerError; // 500 if unexpected
+            var code = HttpStatusCode.InternalServerError; 
             var problemDetails = new ProblemDetails
             {
                 Status = (int)code,
@@ -51,7 +51,7 @@ namespace API.Middleware
                     problemDetails.Title = "Invalid Argument";
                     problemDetails.Detail = e.Message;
                     break;
-                // Add other custom exception types here
+                
             }
 
             context.Response.ContentType = "application/problem+json";

@@ -83,9 +83,10 @@ namespace API.Services
 
             if (!string.IsNullOrEmpty(userEmail))
             {
-                var graphEvent = await CreateEventAsync(userEmail, "Meeting Room Booking", null, createdBooking.StartTime, createdBooking.EndTime,
-                                                        createdBooking?.Room?.Name, createdBooking?.Room?.Floor, createdBooking?.Attendees!)
-                                                        ?? throw new Exception("Failed to create graph event");
+                var graphEvent = await CreateEventAsync
+                    (userEmail, "Meeting Room Booking", null, createdBooking.StartTime, createdBooking.EndTime,
+                    createdBooking?.Room?.Name, createdBooking?.Room?.Floor, createdBooking?.Attendees!)
+                    ?? throw new Exception("Failed to create graph event");
 
                 string updateEventIdSql = "UPDATE MeetingSchema.Bookings SET CalendarEventId = @CalendarEventId WHERE Id = @BookingId";
                 DynamicParameters updateParams = new DynamicParameters();
