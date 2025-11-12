@@ -8,12 +8,12 @@ namespace API.Controllers
 {
 
     [ApiController]
-    [Route("api/[controller]")]
-    public class UserController : ControllerBase
+    [Route("api/users")]
+    public class UsersController : ControllerBase
     {
         private readonly IDataContext _contextDapper;
 
-        public UserController(IDataContext contextDapper)
+        public UsersController(IDataContext contextDapper)
         {
             _contextDapper = contextDapper;
         }
@@ -25,7 +25,7 @@ namespace API.Controllers
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@Id", id);
 
-            int rowsAffected = await _contextDapper.ExecuteSql(sql, parameters);
+            int rowsAffected = await _contextDapper.ExecuteAsync(sql, parameters);
             if (rowsAffected == 0)
             {
                 return NotFound();

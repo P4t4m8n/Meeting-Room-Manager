@@ -1,30 +1,36 @@
+using System.Data;
 using System.Security.Claims;
 using API.Attributes;
 using API.Dtos.Booking;
+using API.Dtos.Room;
+using API.Dtos.User;
 using API.Interfaces;
-using API.Models;
 using API.QueryParams;
 using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using API.Services;
+using Microsoft.Data.SqlClient;
 
 namespace API.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/bookings")]
     public class BookingsController : ControllerBase
     {
         private readonly IDataContext _contextDapper;
-        private readonly GraphService _graphService;
-        private readonly BookingService _bookingService;
+        private readonly IGoogleCalendarService _calendarService;
+        private readonly IBookingService _bookingService;
+        private readonly IEncryptionService _encryptionService;
+        private readonly IAuthService _authService;
 
-        public BookingsController(IDataContext contextDapper, GraphService graphService, BookingService bookingService)
+        public BookingsController(IDataContext contextDapper, IGoogleCalendarService calendarService, IBookingService bookingService, IEncryptionService encryptionService, IAuthService authService)
         {
             _contextDapper = contextDapper;
-            _graphService = graphService;
+            _calendarService = calendarService;
             _bookingService = bookingService;
+            _encryptionService = encryptionService;
+            _authService = authService;
         }
 
         [RequireRole("Admin")]
@@ -33,22 +39,8 @@ namespace API.Controllers
             [FromQuery] BookingQueryParams? queryParams = null
       )
         {
-            string sql = @"EXEC MeetingSchema.usp_Bookings_Select_Many
-                             @StartDate=@StartDate,
-                             @EndDate=@EndDate,
-                             @RoomId=@RoomId,
-                             @Status=@Status
-                             @UserId=@UserId
-                             ";
 
-            DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@StartDate", queryParams?.StartDate);
-            parameters.Add("@EndDate", queryParams?.EndDate);
-            parameters.Add("@RoomId", queryParams?.RoomId);
-            parameters.Add("@Status", queryParams?.Status);
-            parameters.Add("@UserId", queryParams?.UserId);
-
-            IEnumerable<BookingDto> bookings = await _contextDapper.LoadData<BookingDto>(sql, parameters);
+            IEnumerable<BookingDto>? bookings = await _bookingService.GetBookingsAsync(queryParams);
             return Ok(bookings);
         }
 
@@ -68,16 +60,11 @@ namespace API.Controllers
             return Ok(bookings);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetBookingById")]
         public async Task<ActionResult<BookingDto>> GetBookingById(Guid id)
         {
 
-            string sql = "EXEC MeetingSchema.usp_Bookings_Select_By_Id @BookingId=@BookingId";
-
-            DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@BookingId", id);
-
-            BookingDto? booking = await _contextDapper.LoadDataSingle<BookingDto>(sql, parameters);
+            BookingDto? booking = await _bookingService.GetBookingByIdAsync(id);
 
             if (booking == null)
                 return NotFound(new { message = "Booking not found or unauthorized" });
@@ -85,7 +72,7 @@ namespace API.Controllers
             return Ok(booking);
         }
         [RequireRole("Admin", "User")]
-        [HttpPost("Edit")]
+        [HttpPost("edit")]
         public async Task<ActionResult<BookingDto>> CreateBooking([FromBody] BookingCreateDto bookingDto)
         {
             if (bookingDto == null)
@@ -100,17 +87,49 @@ namespace API.Controllers
 
             bookingDto.UserId = Guid.Parse(userId);
 
+
+
             BookingDto? createdBooking = await _bookingService.CreateBookingAsync(bookingDto);
 
             if (createdBooking == null)
                 return StatusCode(500, new { message = "Failed to create booking" });
 
-            await _graphService.EmitEventAsync(userId, createdBooking);
+            try
+            {
+                string refreshToken = await _authService.GetRefreshTokenAsync(bookingDto.UserId);
+
+                string eventId = await _calendarService.AddToGoogleCalendar(createdBooking, refreshToken);
+
+                if (!string.IsNullOrEmpty(eventId))
+                {
+                    int rowAffected = await _bookingService.UpdateBookingCalendarEventIdAsync(createdBooking.Id, eventId);
+
+                    if (rowAffected == 0)
+                        return StatusCode(500, new { message = "Booking created but failed to update calendar event ID" });
+                }
+                else
+                {
+                    return StatusCode(207, new
+                    {
+                        message = "Booking created but calendar event creation failed",
+                        booking = createdBooking
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Calendar event creation failed: {ex.Message}");
+                return StatusCode(207, new
+                {
+                    message = "Booking created but calendar event creation failed",
+                    booking = createdBooking
+                });
+            }
 
             return CreatedAtAction(nameof(GetBookingById), new { id = createdBooking.Id }, createdBooking);
         }
         [RequireRole("Admin", "User")]
-        [HttpPut("Edit/{id}")]
+        [HttpPut("edit/{id}")]
         public async Task<IActionResult> UpdateBooking(Guid id, [FromBody] BookingEditDto bookingDto)
         {
             if (!ModelState.IsValid)
@@ -129,7 +148,7 @@ namespace API.Controllers
             string getBookingSql = "SELECT UserId, RoomId FROM MeetingSchema.Bookings WHERE Id = @BookingId";
             DynamicParameters getParams = new DynamicParameters();
             getParams.Add("@BookingId", id);
-            var existingBooking = await _contextDapper.LoadDataSingle<dynamic>(getBookingSql, getParams);
+            var existingBooking = await _contextDapper.QuerySingleOrDefaultAsync<dynamic>(getBookingSql, getParams);
 
             if (existingBooking == null)
                 return NotFound(new { message = "Booking not found" });
@@ -137,7 +156,7 @@ namespace API.Controllers
             string userRoleSql = "SELECT Role FROM MeetingSchema.Users WHERE Id = @UserId";
             DynamicParameters roleParams = new DynamicParameters();
             roleParams.Add("@UserId", Guid.Parse(userId));
-            string? userRole = await _contextDapper.LoadDataSingle<string>(userRoleSql, roleParams);
+            string? userRole = await _contextDapper.QuerySingleOrDefaultAsync<string>(userRoleSql, roleParams);
 
             if (existingBooking.UserId.ToString() != userId && userRole != "Admin")
                 return Forbid();
@@ -164,7 +183,7 @@ namespace API.Controllers
                 conflictParams.Add("@SearchStartTime", searchStartTime);
                 conflictParams.Add("@SearchEndTime", searchEndTime);
 
-                int conflicts = await _contextDapper.LoadDataSingle<int>(conflictSql, conflictParams);
+                int conflicts = await _contextDapper.QuerySingleOrDefaultAsync<int>(conflictSql, conflictParams);
 
                 if (conflicts > 0)
                     return Conflict(new { message = "Room is already booked for the requested time slot" });
@@ -190,7 +209,7 @@ namespace API.Controllers
             parameters.Add("@Status", bookingDto?.Status?.ToString());
             parameters.Add("@Attendees", attendeesJson);
 
-            int rowsAffected = await _contextDapper.ExecuteSql(sql, parameters);
+            int rowsAffected = await _contextDapper.ExecuteAsync(sql, parameters);
 
             if (rowsAffected == 0)
                 return NotFound(new { message = "Failed to update booking" });
@@ -208,7 +227,7 @@ namespace API.Controllers
             string getBookingSql = "SELECT UserId FROM MeetingSchema.Bookings WHERE Id = @BookingId AND Status = 'Active'";
             DynamicParameters getParams = new DynamicParameters();
             getParams.Add("@BookingId", id);
-            var existingBooking = await _contextDapper.LoadDataSingle<dynamic>(getBookingSql, getParams);
+            var existingBooking = await _contextDapper.QuerySingleOrDefaultAsync<dynamic>(getBookingSql, getParams);
 
             if (existingBooking == null)
                 return NotFound(new { message = "Booking not found or already cancelled" });
@@ -216,7 +235,7 @@ namespace API.Controllers
             string userRoleSql = "SELECT Role FROM MeetingSchema.Users WHERE Id = @UserId";
             DynamicParameters roleParams = new DynamicParameters();
             roleParams.Add("@UserId", Guid.Parse(userId));
-            string? userRole = await _contextDapper.LoadDataSingle<string>(userRoleSql, roleParams);
+            string? userRole = await _contextDapper.QuerySingleOrDefaultAsync<string>(userRoleSql, roleParams);
 
             if (existingBooking.UserId.ToString() != userId && userRole != "Admin")
                 return Forbid();
@@ -226,7 +245,7 @@ namespace API.Controllers
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@BookingId", id);
 
-            int rowsAffected = await _contextDapper.ExecuteSql(sql, parameters);
+            int rowsAffected = await _contextDapper.ExecuteAsync(sql, parameters);
 
             if (rowsAffected == 0)
                 return NotFound(new { message = "Failed to cancel booking" });

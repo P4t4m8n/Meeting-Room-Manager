@@ -36,24 +36,37 @@ BEGIN
 END
 
 GO
+CREATE OR ALTER PROCEDURE MeetingSchema.usp_Users_Exists_GoogleId
+    @Email NVARCHAR(100)
+AS
+BEGIN
+    SELECT Email, GoogleId
+    FROM MeetingSchema.Users
+    WHERE Email = @Email;
+END
+
+GO
 
 CREATE OR ALTER PROCEDURE MeetingSchema.usp_Users_Create
     @Email NVARCHAR(100),
-    @Name NVARCHAR(100),
-    @PasswordHash VARBINARY(MAX),
-    @PasswordSalt VARBINARY(MAX),
+    @Name NVARCHAR(100)="User",
+    @PasswordHash VARBINARY(MAX)=NULL,
+    @PasswordSalt VARBINARY(MAX)=NULL,
+    @GoogleId NVARCHAR(200) = NULL,
+    @EncryptedRefreshToken NVARCHAR(500) = NULL,
+
     @Role NVARCHAR(20) = 'User'
 AS
 BEGIN
     INSERT INTO MeetingSchema.Users
-        (Email, Name, PasswordHash, PasswordSalt, Role)
+        (Email, Name, PasswordHash, PasswordSalt, GoogleId, EncryptedRefreshToken, Role)
     OUTPUT
     INSERTED.Id,
     INSERTED.Email,
     INSERTED.Name,
     INSERTED.Role
     VALUES
-        (@Email, @Name, @PasswordHash, @PasswordSalt, @Role);
+        (@Email, @Name, @PasswordHash, @PasswordSalt, @GoogleId, @EncryptedRefreshToken, @Role);
 END
 
 GO

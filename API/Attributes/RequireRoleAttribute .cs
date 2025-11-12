@@ -37,7 +37,7 @@ namespace API.Attributes
             var parameters = new DynamicParameters();
             parameters.Add("@Id", Guid.Parse(userId));
 
-            var userRole = await dataContext.LoadDataSingle<string>(sql, parameters);
+            var userRole = await dataContext.QuerySingleOrDefaultAsync<string>(sql, parameters);
 
             if (string.IsNullOrEmpty(userRole))
             {

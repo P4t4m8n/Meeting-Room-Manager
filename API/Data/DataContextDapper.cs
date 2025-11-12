@@ -23,13 +23,13 @@ namespace API.Data
             return await dbConnection.QueryAsync<T>(sql, parameters);
         }
 
-        public async Task<T?> LoadDataSingle<T>(string sql, DynamicParameters? parameters)
+        public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, DynamicParameters? parameters)
         {
             using IDbConnection dbConnection = new SqlConnection(_connectionString);
             return await dbConnection.QuerySingleOrDefaultAsync<T>(sql, parameters);
         }
 
-        public async Task<int> ExecuteSql(string sql, DynamicParameters? parameters)
+        public async Task<int> ExecuteAsync(string sql, DynamicParameters? parameters)
         {
             using IDbConnection dbConnection = new SqlConnection(_connectionString);
             return await dbConnection.ExecuteAsync(sql, parameters);
@@ -42,7 +42,10 @@ namespace API.Data
         }
 
 
-
+        public IDbConnection CreateConnection()
+        {
+            return new SqlConnection(_connectionString);
+        }
 
     }
 }

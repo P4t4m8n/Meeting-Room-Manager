@@ -11,6 +11,8 @@ namespace API.Dtos.Booking
         public int? BufferMinutes { get; set; }
         public RoomBookingStatus? Status { get; set; }
         public string? CalendarEventId { get; set; }
+        public string? Summary { get; set; }
+        public string? Description { get; set; }
         // Navigation properties
         public RoomDto? Room { get; set; }
         public UserDto? User { get; set; }

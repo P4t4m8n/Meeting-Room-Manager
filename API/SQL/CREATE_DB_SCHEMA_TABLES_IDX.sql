@@ -55,11 +55,15 @@ BEGIN
         Role NVARCHAR(20) NOT NULL DEFAULT 'User',
         CONSTRAINT chk_user_role CHECK (Role IN ('User', 'Admin', 'Maintenance')),
 
-        PasswordHash VARBINARY (MAX) ,
-        PasswordSalt VARBINARY (MAX) ,
+        PasswordHash VARBINARY (MAX) NULL,
+        PasswordSalt VARBINARY (MAX) NULL,
+
+        EncryptedRefreshToken NVARCHAR(500) NULL,
+        GoogleId NVARCHAR(255) NULL,
 
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
-        UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
+        UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+
     );
 
 END
@@ -73,19 +77,21 @@ BEGIN
     CREATE TABLE MeetingSchema.Bookings
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-        RoomId UNIQUEIDENTIFIER NOT NULL,
-        UserId UNIQUEIDENTIFIER NOT NULL,
+        RoomId UNIQUEIDENTIFIER  NULL,
+        UserId UNIQUEIDENTIFIER  NULL,
         StartTime DATETIME2 NOT NULL,
         EndTime DATETIME2 NOT NULL,
         BufferMinutes INT NOT NULL DEFAULT 0,
         Status NVARCHAR(20) NOT NULL DEFAULT 'Active',
         CONSTRAINT chk_bookings_status CHECK (Status IN ('Active', 'Cancelled', 'Completed')),
-        CalendarEventId NVARCHAR(255) NULL,-- Microsoft Graph event ID
+        CalendarEventId NVARCHAR(255) NULL,
+        Summary NVARCHAR(255) NULL,
+        Description NVARCHAR(1000) NULL,
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
         UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
 
-        CONSTRAINT FK_Bookings_Rooms FOREIGN KEY (RoomId) REFERENCES MeetingSchema.Rooms(Id),
-        CONSTRAINT FK_Bookings_Users FOREIGN KEY (UserId) REFERENCES MeetingSchema.Users(Id)
+        CONSTRAINT FK_Bookings_Rooms FOREIGN KEY (RoomId) REFERENCES MeetingSchema.Rooms(Id) ON DELETE SET NULL,
+        CONSTRAINT FK_Bookings_Users FOREIGN KEY (UserId) REFERENCES MeetingSchema.Users(Id) ON DELETE SET NULL
     );
 
 END

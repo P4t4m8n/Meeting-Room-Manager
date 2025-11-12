@@ -11,9 +11,11 @@ namespace API.Dtos.Booking
         public int BufferMinutes { get; set; }
         public RoomBookingStatus Status { get; set; } = RoomBookingStatus.Active;
         public string? CalendarEventId { get; set; }
+        public string? Summary { get; set; }
+        public string? Description { get; set; }
         // Navigation properties
         public RoomDto? Room { get; set; }
-        public UserDto? User { get; set; }
+        public UserDto? Owner { get; set; }
         public List<BookingAttendeeDto>? Attendees { get; set; }
     }
 }

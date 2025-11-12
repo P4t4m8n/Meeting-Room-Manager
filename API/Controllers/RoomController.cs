@@ -11,12 +11,12 @@ namespace API.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
-    public class RoomController : ControllerBase
+    [Route("api/rooms")]
+    public class RoomsController : ControllerBase
     {
         private readonly DataContextDapper _dapper;
 
-        public RoomController(IConfiguration config)
+        public RoomsController(IConfiguration config)
         {
             _dapper = new DataContextDapper(config);
         }
@@ -94,7 +94,7 @@ namespace API.Controllers
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@id", id);
 
-            Room? room = await _dapper.LoadDataSingle<Room>(sql, parameters);
+            Room? room = await _dapper.QuerySingleOrDefaultAsync<Room>(sql, parameters);
 
             if (room == null)
                 return NotFound(new { message = "Room not found" });
@@ -103,7 +103,7 @@ namespace API.Controllers
         }
 
         [RequireRole("Admin")]
-        [HttpPost("Edit")]
+        [HttpPost("edit")]
         public async Task<IActionResult> CreateRoom([FromBody] RoomCreateDto roomDto)
         {
             try
@@ -218,7 +218,7 @@ namespace API.Controllers
             var parameters = new DynamicParameters();
             parameters.Add("@id", id);
 
-            var rowsAffected = await _dapper.ExecuteSql(sql, parameters);
+            var rowsAffected = await _dapper.ExecuteAsync(sql, parameters);
 
             if (rowsAffected == 0)
                 return NotFound(new { message = "Room not found" });

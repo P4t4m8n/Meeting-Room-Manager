@@ -1,33 +1,36 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
 using API.Dtos.User;
 using API.Dtos.Auth;
-using API.Services;
 using API.Interfaces;
 using API.Models;
 using Dapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using API.Enums;
+using API.Dtos.Google;
+using Microsoft.Extensions.Primitives;
 
 namespace API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     public class AuthController : ControllerBase
     {
 
         private readonly IDataContext _contextDapper;
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
+        private readonly IGoogleCalendarService _googleCalendarService;
+        private readonly IEncryptionService _encryptionService;
 
-        public AuthController(IDataContext contextDapper, AuthService authService)
+        public AuthController(IDataContext contextDapper, IAuthService authService, IGoogleCalendarService googleCalendarService, IEncryptionService encryptionService)
         {
             _contextDapper = contextDapper;
             _authService = authService;
+            _googleCalendarService = googleCalendarService;
+            _encryptionService = encryptionService;
         }
 
         [AllowAnonymous]
-        [HttpPost("Sign-in")]
+        [HttpPost("sign-in")]
         public async Task<ActionResult<UserDto>> SignIn(AuthSignInDto signInDto)
         {
 
@@ -36,12 +39,11 @@ namespace API.Controllers
                 return BadRequest(new { message = "Email and password are required" });
             }
 
-            string sqlForHash = "EXEC MeetingSchema.usp_Users_GetPasswordHashSalt @Email=@Email";
 
-            DynamicParameters parameters = new DynamicParameters();
+            DynamicParameters parameters = new();
             parameters.Add("@Email", signInDto.Email);
 
-            AuthConfirmationDto? authConfirmation = await _contextDapper.LoadDataSingle<AuthConfirmationDto>(sqlForHash, parameters);
+            AuthConfirmationDto? authConfirmation = await _authService.GetPasswordHashAndSalt(parameters);
 
             if (authConfirmation == null)
             {
@@ -59,7 +61,7 @@ namespace API.Controllers
             }
 
             string userSelectSql = "EXEC MeetingSchema.usp_Users_GetUserDetails @Email=@Email";
-            User? user = await _contextDapper.LoadDataSingle<User>(userSelectSql, parameters);
+            User? user = await _contextDapper.QuerySingleOrDefaultAsync<User>(userSelectSql, parameters);
 
             if (user == null || user.Id == Guid.Empty)
             {
@@ -88,7 +90,7 @@ namespace API.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("Sign-up")]
+        [HttpPost("sign-up")]
         public async Task<ActionResult<UserDto>> SignUp(AuthSignUpDto signUpDto)
         {
 
@@ -97,48 +99,8 @@ namespace API.Controllers
                 return BadRequest(new { message = "Passwords do not match" });
             }
 
-            string selectExistingUserSql = "EXEC MeetingSchema.usp_Users_Exists @Email=@Email";
-            DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@Email", signUpDto.Email);
-
-            IEnumerable<string> existingUser = await _contextDapper.LoadData<string>(selectExistingUserSql, parameters);
-            if (existingUser.Any())
-            {
-                return BadRequest(new { message = "Bad credentials" });
-            }
-
-            byte[] PasswordSalt = new byte[128 / 8];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetNonZeroBytes(PasswordSalt);
-            }
-
-            byte[] passwordHash = _authService.GetPasswordHash(signUpDto.Password!, PasswordSalt);
-
-            string sqlInsertAuth = @"EXEC MeetingSchema.usp_Users_Create 
-                                      @Email=@Email, 
-                                      @Name=@Name,
-                                      @PasswordHash=@PasswordHash, 
-                                      @PasswordSalt=@PasswordSalt, 
-                                      @Role=@Role";
-
-            parameters.Add(@"Name", signUpDto.Name);
-            parameters.Add(@"PasswordHash", passwordHash);
-            parameters.Add(@"PasswordSalt", PasswordSalt);
-            parameters.Add(@"Role", UserRole.User.ToString());
-
-
-
-            User? user = await _contextDapper.InsertAndReturn<User>(sqlInsertAuth, parameters);
-
-
-            if (user == null || user.Id == Guid.Empty)
-            {
-
-                return StatusCode(500, new { message = "Server error" });
-            }
-
-            string token = _authService.CreateToken(user.Id.ToString()!);
+            UserDto userDto = await _authService.CreateAuthUser(signUpDto);
+            string token = _authService.CreateToken(userDto.Id.ToString()!);
 
             Response.Cookies.Append("AuthToken", token, new CookieOptions
             {
@@ -148,18 +110,78 @@ namespace API.Controllers
                 Expires = DateTimeOffset.UtcNow.AddDays(1)
             });
 
-            UserDto userDto = new UserDto
+
+            return Ok(userDto);
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("google")]
+        public async Task<IActionResult> GoogleAuth()
+        {
+            return await Task.Run(() => Redirect(_googleCalendarService.GetAuthCode()));
+        }
+
+
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("callback")]
+        public async Task<IActionResult> Callback()
+        {
+            StringValues code = HttpContext.Request.Query["code"];
+            if (string.IsNullOrEmpty(code))
             {
-                Id = user.Id,
-                Email = user.Email,
-                Name = user.Name,
-                Role = user.Role
-            };
+                return BadRequest(new { message = "Authorization code missing" });
+            }
+
+            GoogleCalendarResDto res = await _googleCalendarService.GetTokens(code!);
+            GoogleUserInfoDto userInfo = await _googleCalendarService.GetUserInfo(res.Access_token!);
+
+            DynamicParameters parameters = new();
+            string email = userInfo.Email ?? "";
+            parameters.Add("@Email", email);
+
+            AuthUserExistDto? existingUser = await _authService.GetUserExist(parameters);
+
+            if (existingUser != null && existingUser.GoogleId != null && existingUser.GoogleId != userInfo.Id)
+            {
+                return Redirect("front/auth/sign-in");
+
+            }
+
+            UserDto? userDto = null;
+            if (existingUser != null && existingUser.GoogleId == null)
+            {
+                string encryptedRefreshToken = _encryptionService.Encrypt(res.Refresh_token!);
+                string updateSql = @"UPDATE MeetingSchema.Users 
+                                     SET GoogleId=@GoogleId, EncryptedRefreshToken=@EncryptedRefreshToken 
+                                     OUTPUT INSERTED.Id, INSERTED.Email, INSERTED.Name, INSERTED.Role
+                                     WHERE Email=@Email";
+
+                parameters.Add("@GoogleId", userInfo.Id);
+                parameters.Add("@EncryptedRefreshToken", encryptedRefreshToken);
+
+                userDto = await _contextDapper.QuerySingleOrDefaultAsync<UserDto>(updateSql, parameters);
+            }
+            else
+            {
+                userDto = await _authService.GetOrCreateGoogleUser(userInfo, parameters, existingUser != null, res.Refresh_token ?? "");
+            }
+
+            string token = _authService.CreateToken(userDto?.Id.ToString()!);
+
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Only send over HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(1)
+            });
+
 
             return Ok(userDto);
         }
 
-        [HttpGet("Check-session")]
+        [HttpGet("check-session")]
         public async Task<ActionResult<UserDto>> CheckSession()
         {
             string userId = User.FindFirstValue("userId") ?? "";
@@ -173,7 +195,7 @@ namespace API.Controllers
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@Id", Guid.Parse(userId));
 
-            User? user = await _contextDapper.LoadDataSingle<User>(userIdSelectSql, parameters);
+            User? user = await _contextDapper.QuerySingleOrDefaultAsync<User>(userIdSelectSql, parameters);
 
             if (user == null || user.Id == Guid.Empty)
             {
@@ -190,7 +212,7 @@ namespace API.Controllers
 
             return Ok(userDto);
         }
-        [HttpGet("Refresh-token")]
+        [HttpGet("refresh-token")]
         public async Task<ActionResult<UserDto>> RefreshToken()
         {
             string userId = User.FindFirstValue("userId") ?? "";
@@ -203,7 +225,7 @@ namespace API.Controllers
             string userIdSelectSql = "EXEC MeetingSchema.usp_Users_GetUserDetails @Id=@Id";
             DynamicParameters parameters = new DynamicParameters();
             parameters.Add("@Id", Guid.Parse(userId));
-            User? user = await _contextDapper.LoadDataSingle<User>(userIdSelectSql, parameters);
+            User? user = await _contextDapper.QuerySingleOrDefaultAsync<User>(userIdSelectSql, parameters);
 
             if (user == null || user.Id == Guid.Empty)
             {
@@ -233,7 +255,7 @@ namespace API.Controllers
             return Ok(userDto);
         }
 
-        [HttpPost("Sign-out")]
+        [HttpPost("sign-out")]
         public new ActionResult SignOut()
         {
             Response.Cookies.Delete("AuthToken");

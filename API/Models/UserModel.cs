@@ -6,8 +6,9 @@ namespace API.Models
     {
         public required string Email { get; set; }
         public required string Name { get; set; }
-        public required byte[] PasswordHash { get; set; }
-        public required byte[] PasswordSalt { get; set; }
+        public byte[]? PasswordHash { get; set; }
+        public byte[]? PasswordSalt { get; set; }
+        public string? GoogleId { get; set; }
         public required UserRole Role { get; set; }
     }
 }

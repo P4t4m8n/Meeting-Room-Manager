@@ -8,7 +8,7 @@ using Microsoft.Graph.Models;
 
 namespace API.Services
 {
-    public class GraphService
+    public class GraphService : IGraphService
     {
         private readonly IDataContext _contextDapper;
 
@@ -79,7 +79,7 @@ namespace API.Services
             string userEmailSql = "SELECT Email FROM MeetingSchema.Users WHERE Id = @UserId";
             DynamicParameters userEmailParams = new DynamicParameters();
             userEmailParams.Add("@UserId", Guid.Parse(userId));
-            string? userEmail = await _contextDapper.LoadDataSingle<string>(userEmailSql, userEmailParams);
+            string? userEmail = await _contextDapper.QuerySingleOrDefaultAsync<string>(userEmailSql, userEmailParams);
 
             if (!string.IsNullOrEmpty(userEmail))
             {
@@ -92,7 +92,7 @@ namespace API.Services
                 DynamicParameters updateParams = new DynamicParameters();
                 updateParams.Add("@CalendarEventId", graphEvent.Id);
                 updateParams.Add("@BookingId", createdBooking?.Id);
-                await _contextDapper.ExecuteSql(updateEventIdSql, updateParams);
+                await _contextDapper.ExecuteAsync(updateEventIdSql, updateParams);
                 createdBooking!.CalendarEventId = graphEvent?.Id;
 
             }

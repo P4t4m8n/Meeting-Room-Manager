@@ -1,3 +1,7 @@
+USE MeetingDB
+
+GO
+
 CREATE OR ALTER PROCEDURE MeetingSchema.usp_Bookings_Select_Many
     @StartDate DATETIME2 = NULL,
     @EndDate DATETIME2 = NULL,
@@ -108,7 +112,6 @@ GO
             BEGIN TRANSACTION;
 
             DECLARE @BookingId UNIQUEIDENTIFIER = NEWID();
-            DECLARE @Now DATETIME2 = GETDATE();
 
             BEGIN TRY
         INSERT INTO MeetingSchema.Bookings
@@ -200,14 +203,13 @@ GO
                     DELETE FROM MeetingSchema.BookingAttendees WHERE BookingId = @BookingId;
 
                     INSERT INTO MeetingSchema.BookingAttendees
-                        (Id, BookingId, Email, Name, CreatedAt, UpdatedAt)
+                        (Id, BookingId, Email, Name)
                     SELECT
                         NEWID(),
                         @BookingId,
                         JSON_VALUE(value, '$.Email'),
-                        JSON_VALUE(value, '$.Name'),
-                        @Now,
-                        @Now
+                        JSON_VALUE(value, '$.Name')
+
                     FROM OPENJSON(@Attendees);
                 END
         

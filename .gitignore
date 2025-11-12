@@ -1,2 +1,4 @@
 API/appsettings.Development.json
 API/appsettings.json
+.env
+users.json
