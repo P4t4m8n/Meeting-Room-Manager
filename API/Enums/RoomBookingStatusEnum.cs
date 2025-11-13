@@ -7,6 +7,7 @@ namespace API.Enums;
 public enum RoomBookingStatus
 {
     Active,
-    Canceled,
-    Completed
+    Cancelled,
+    Completed,
+    Pending
 }

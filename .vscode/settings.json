@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "*.env": "env",
+    "*.env.production": "env",
+    "*.css": "tailwindcss"
+  }
+}

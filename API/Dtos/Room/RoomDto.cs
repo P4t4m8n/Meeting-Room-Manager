@@ -1,4 +1,6 @@
+using API.Dtos.Booking;
 using API.Enums;
+using API.Models;
 
 namespace API.Dtos.Room;
 
@@ -12,4 +14,6 @@ public class RoomDto : Dto
     public required bool HasConferenceCall { get; set; }
     public required string ImageUrl { get; set; }
     public required RoomStatus Status { get; set; }
+
+    public List<BookingDto>? Bookings { get; set; }
 }

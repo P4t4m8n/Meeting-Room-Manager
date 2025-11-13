@@ -74,7 +74,7 @@ namespace API.Services
         public async Task<UserDto> CreateAuthUser(AuthSignUpDto signUpDto)
         {
 
-            CheckUserExists(signUpDto.Email!);
+           await CheckUserExists(signUpDto.Email!);
 
             byte[] PasswordSalt = new byte[128 / 8];
             using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
@@ -179,8 +179,8 @@ namespace API.Services
             }
             return _encryptionService.Decrypt(encryptedRefreshToken);
         }
-        
-        private async void CheckUserExists(string Email)
+
+        private async Task CheckUserExists(string Email)
         {
             string selectExistingUserSql = "EXEC MeetingSchema.usp_Users_Exists @Email=@Email";
             DynamicParameters parameters = new();

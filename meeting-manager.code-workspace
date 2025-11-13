@@ -1,0 +1,32 @@
+{
+  "folders": [
+    {
+      "name": "API (C#)",
+      "path": "API"
+    },
+    {
+      "name": "UI (React)",
+      "path": "UI"
+    },
+    {
+      "name": "Root",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/bin": true,
+      "**/obj": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csharp",
+      "ms-dotnettools.csdevkit",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      
+    ]
+  }
+}
