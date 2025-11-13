@@ -5,7 +5,9 @@
   --color-main-bg: rgb(36, 36, 36);
   --color-main-bg-hover: rgba(36, 36, 36, 0.1);
 
-
+  --color-main-blue: #229ebc;
+  --color-main-blue-dark: #04364E;
+  --color-main-white:#F8FCFD;
 }
 @media (prefers-color-scheme: light) {
   :root {

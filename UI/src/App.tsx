@@ -1,4 +1,4 @@
-import { BrowserRouter } from "react-router";
+import { BrowserRouter, Routes } from "react-router";
 import AppHeader from "./components/Header/AppHeader";
 import AuthGuard from "./guards/AuthGuard";
 import { AppProvider } from "./providers/AppProvider";
@@ -12,9 +12,9 @@ export default function App() {
       <BrowserRouter>
         <AppProvider>
           <AuthGuard>
-            <div className="bg-main-bg h-svh">
+            <div className="bg-main-bg h-screen">
               <AppHeader />
-              {routes}
+              <Routes>{routes}</Routes>
             </div>
           </AuthGuard>
         </AppProvider>

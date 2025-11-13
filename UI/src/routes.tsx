@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
-import { Route, Routes } from "react-router";
+import { Route } from "react-router";
 import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
-import AdminPage from "./pages/AdminPage";
+import AdminPage from "./pages/Admin/AdminPage";
 import OrdersPage from "./pages/OrdersPage";
+import AdminBookingsPage from "./pages/Admin/AdminBookingsPage";
+import AdminUsersPage from "./pages/Admin/AdminUsersPage";
+import AdminRoomsPage from "./pages/Admin/AdminRoomsPage";
 
 interface IRouteConfig {
   path: string;
@@ -12,17 +15,32 @@ interface IRouteConfig {
 }
 
 export const renderRoutes = (routes: IRouteConfig[]) => {
-  const _routes = routes.map((route) => (
+ return routes.map((route) => (
     <Route key={route.path} path={route.path} element={route.element}>
       {route.children && renderRoutes(route.children)}
     </Route>
   ));
-  return <Routes>{_routes}</Routes>;
+
 };
 
 const AUTH_PAGE_ROUTE = "/auth";
 const ADMIN_PAGE_ROUTE = "/admin";
 const ORDERS_PAGE_ROUTE = "/orders";
+
+const ADMIN_ROUTES: IRouteConfig[] = [
+  {
+    path: "bookings",
+    element: <AdminBookingsPage />,
+  },
+  {
+    path: "rooms",
+    element: <AdminRoomsPage />,
+  },
+  {
+    path: "users",
+    element: <AdminUsersPage />,
+  },
+];
 
 export const CORE_ROUTES: IRouteConfig[] = [
   {
@@ -36,6 +54,7 @@ export const CORE_ROUTES: IRouteConfig[] = [
   {
     path: ADMIN_PAGE_ROUTE,
     element: <AdminPage />,
+    children: ADMIN_ROUTES,
   },
   {
     path: ORDERS_PAGE_ROUTE,

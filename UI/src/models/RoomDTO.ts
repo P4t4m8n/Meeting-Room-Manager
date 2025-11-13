@@ -17,6 +17,12 @@ export interface IRoomDTO extends IDTO {
 }
 
 export interface IRoomFilter {
-  startDate?: string;
-  endDate?: string;
+  startTime?: string | null|Date;
+  endTime?: string | null|Date;
+  capacity?: number | null;
+  floor?: number | null;
+  hasProjector?: boolean | null;
+  hasTeamMeeting?: boolean | null;
+  hasConferenceCall?: boolean | null;
+  status?: RoomStatus | null;
 }

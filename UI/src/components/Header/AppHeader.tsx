@@ -1,24 +1,38 @@
 import { IconLogo } from "../Icons/IconLogo";
 import { useAuth } from "../../hooks/useAuth";
 import { IconAvatar } from "../Icons/IconAvatar";
-import AppNavLink from "../AppNavLink";
+import { NavLink } from "react-router";
 
 export default function AppHeader() {
   const { user } = useAuth();
   return (
     <header className="grid  justify-items-center py-4 gap-2 w-full border-b border-gray-700">
-      <IconLogo className="w-12 h-12 stroke-gray-500 fill-gray-500" />
-      <nav className="w-full flex gap-4 justify-center text-amber-50 font-semibold">
-        <AppNavLink
+      <IconLogo className="w-16 h-16 stroke-gray-500 fill-gray-500" />
+      <nav className="w-full flex gap-4 justify-center text-main-blue font-semibold">
+        <NavLink
           className={({ isActive }) =>
-            isActive ? "text-blue-400 underline underline-offset-4" : ""
+            isActive ? "text-main-white underline underline-offset-4" : ""
           }
           to="/"
         >
           בית
-        </AppNavLink>
-        <AppNavLink to="my-bookings">הזמנות</AppNavLink>
-        <AppNavLink to="admin">מנהל</AppNavLink>
+        </NavLink>
+        <NavLink
+          className={({ isActive }) =>
+            isActive ? "text-main-white underline underline-offset-4" : ""
+          }
+          to="my-bookings"
+        >
+          הזמנות
+        </NavLink>
+        <NavLink
+          className={({ isActive }) =>
+            isActive ? "text-main-white underline underline-offset-4" : ""
+          }
+          to="admin"
+        >
+          מנהל
+        </NavLink>
       </nav>
       <div className="fixed bottom-0">
         {user?.imgUrl ? (
