@@ -2,7 +2,6 @@ using System.Text;
 using API.Dtos.Booking;
 using API.Dtos.Google;
 using API.Interfaces;
-using Dapper;
 using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Responses;

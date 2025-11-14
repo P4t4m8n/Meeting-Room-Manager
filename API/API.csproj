@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.17.0" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="Google.Apis" Version="1.72.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.72.0" />

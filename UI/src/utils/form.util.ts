@@ -1,10 +1,11 @@
 const handleInputChange = <T>(
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement|HTMLSelectElement>,
   setStateToEdit: React.Dispatch<React.SetStateAction<T >>
 ) => {
   e.stopPropagation();
   const target = e.target as HTMLInputElement;
   const { name, value, type, checked } = target;
+
 
   let newVal: boolean | string | number | null;
   switch (type) {

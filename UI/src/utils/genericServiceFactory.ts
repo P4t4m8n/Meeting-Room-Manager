@@ -21,16 +21,17 @@ export const genericServiceFactory = <
       return await apiService.get<DTO | null>(`${rootPath}/${id}`);
     },
 
-    save: async (dto?: EditDTO | null): Promise<THttpResponse<DTO>> => {
+    save: async (
+      dto?: EditDTO | null | FormData,
+      id?: string
+    ): Promise<THttpResponse<DTO>> => {
       if (!dto) throw AppError.create("Data is required", 404);
 
-      const { id } = dto;
-
-      if (!id || id.startsWith("temp/")) {
+      if (!id) {
         return await apiService.post<DTO>(`${rootPath}/edit`, dto);
       }
 
-      return await apiService.put<DTO>(`${rootPath}/edit/${dto.id}`);
+      return await apiService.put<DTO>(`${rootPath}/edit/${id}`);
     },
 
     remove: async (id?: string): Promise<THttpResponse<void>> => {

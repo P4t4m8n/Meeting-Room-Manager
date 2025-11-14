@@ -7,8 +7,8 @@ import IconCalendar from "../../Icons/IconCalendar";
 import IconArrow from "../../Icons/IconArrow";
 
 export interface IDateRange {
-  startTime?: Date | null;
-  endTime?: Date | null;
+  startTime?: Date | null | string;
+  endTime?: Date | null | string;
 }
 
 interface DateInputProps {
@@ -29,6 +29,7 @@ export default function DateInput({
   className = "",
   errorRange,
 }: DateInputProps) {
+  console.log("🚀 ~ DateInput ~ selectedRange:", selectedRange);
   const { isOpen, modelRef, handleModel } = useModel<HTMLDivElement>({});
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
 
@@ -43,11 +44,24 @@ export default function DateInput({
       day
     );
 
+    console.log(
+      "🚀 ~ handleDateClick ~ !selectedRange?.startTime || selectedRange?.endTime:",
+      typeof selectedRange?.endTime
+    );
     if (!selectedRange?.startTime || selectedRange?.endTime) {
       handleDateSelect({ startTime: clickedDate, endTime: null });
     } else {
       const startTime = selectedRange.startTime;
       const endTime = clickedDate;
+
+      console.log(
+        "🚀 ~ handleDateClick ~ startTime, endTime:",
+        startTime! <= endTime ? startTime : endTime
+      );
+      console.log(
+        "🚀 ~ handleDateClick ~ startTime, endTime:",
+        startTime! <= endTime ? endTime : startTime
+      );
       handleDateSelect({
         startTime: startTime! <= endTime ? startTime : endTime,
         endTime: startTime! <= endTime ? endTime : startTime,
@@ -159,8 +173,10 @@ export default function DateInput({
     if (!startTime || !hoverDate || !endTime) return false;
 
     return (
-      date.getTime() >= Math.min(startTime.getTime(), hoverDate.getTime()) &&
-      date.getTime() <= Math.max(startTime.getTime(), hoverDate.getTime())
+      date.getTime() >=
+        Math.min(new Date(startTime).getTime(), hoverDate.getTime()) &&
+      date.getTime() <=
+        Math.max(new Date(startTime).getTime(), hoverDate.getTime())
     );
   };
 
@@ -185,15 +201,15 @@ export default function DateInput({
       const isToday = today === date.toDateString();
 
       const isSelected =
-        (startTime && dateString === startTime?.toDateString()) ||
-        (endTime && dateString === endTime?.toDateString());
+        (startTime && dateString === new Date(startTime).toDateString()) ||
+        (endTime && dateString === new Date(endTime).toDateString());
 
       const isInRange = isDateInRange(date);
       const isInHoverRange = isDateInHoverRange(date);
       const isStartTime =
-        startTime && date.toDateString() === startTime.toDateString();
+        startTime && date.toDateString() === new Date(startTime).toDateString();
       const isEndTime =
-        endTime && date.toDateString() === endTime.toDateString();
+        endTime && date.toDateString() === new Date(endTime).toDateString();
 
       days.push(
         <button
@@ -251,7 +267,7 @@ export default function DateInput({
       {isOpen && !disabled && (
         <div
           className="absolute top-[calc(100%+.25rem)] left-0 grid gap-2
-         bg-black-500 border rounded-xl z-50 p-4 w-full"
+         bg-blue-600 border rounded-xl z-50 p-4 w-full"
         >
           {startTime ? (
             <button

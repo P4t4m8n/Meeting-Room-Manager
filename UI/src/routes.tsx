@@ -6,7 +6,9 @@ import AdminPage from "./pages/Admin/AdminPage";
 import OrdersPage from "./pages/OrdersPage";
 import AdminBookingsPage from "./pages/Admin/AdminBookingsPage";
 import AdminUsersPage from "./pages/Admin/AdminUsersPage";
-import AdminRoomsPage from "./pages/Admin/AdminRoomsPage";
+import AdminRoomsPage from "./pages/Admin/Rooms/AdminRoomsPage";
+import AdminRoomEditPage from "./pages/Admin/Rooms/AdminRoomEditPage";
+import AdminRoomDetailsPage from "./pages/Admin/Rooms/AdminRoomDetailsPage";
 
 interface IRouteConfig {
   path: string;
@@ -15,12 +17,11 @@ interface IRouteConfig {
 }
 
 export const renderRoutes = (routes: IRouteConfig[]) => {
- return routes.map((route) => (
+  return routes.map((route) => (
     <Route key={route.path} path={route.path} element={route.element}>
       {route.children && renderRoutes(route.children)}
     </Route>
   ));
-
 };
 
 const AUTH_PAGE_ROUTE = "/auth";
@@ -36,6 +37,9 @@ const ADMIN_ROUTES: IRouteConfig[] = [
     path: "rooms",
     element: <AdminRoomsPage />,
   },
+  { path: "rooms/edit/:roomId", element: <AdminRoomEditPage /> },
+  { path: "rooms/edit/", element: <AdminRoomEditPage /> },
+  { path: "rooms/:roomId", element: <AdminRoomDetailsPage /> },
   {
     path: "users",
     element: <AdminUsersPage />,

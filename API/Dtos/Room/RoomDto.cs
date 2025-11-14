@@ -12,8 +12,9 @@ public class RoomDto : Dto
     public required bool HasProjector { get; set; }
     public required bool HasTeamMeeting { get; set; }
     public required bool HasConferenceCall { get; set; }
-    public required string ImageUrl { get; set; }
+    public string? ImageUrl { get; set; }
+    public string? PublicCloudinaryId { get; set; }
+    public string? Notes { get; set; }
     public required RoomStatus Status { get; set; }
-
     public List<BookingDto>? Bookings { get; set; }
 }

@@ -34,7 +34,7 @@ export default function AppHeader() {
           מנהל
         </NavLink>
       </nav>
-      <div className="fixed bottom-0">
+      <div className=" h-10 w-10  absolute bottom-4 right-4 border rounded-full p-1">
         {user?.imgUrl ? (
           <img
             src={user?.imgUrl}
@@ -42,7 +42,7 @@ export default function AppHeader() {
             className="w-12 h-12 rounded-full"
           />
         ) : (
-          <IconAvatar className="w-12 h-12" />
+          <IconAvatar className="w-full h-full" />
         )}
       </div>
     </header>

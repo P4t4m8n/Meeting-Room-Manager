@@ -12,7 +12,7 @@ export default function App() {
       <BrowserRouter>
         <AppProvider>
           <AuthGuard>
-            <div className="bg-main-bg h-screen">
+            <div className="bg-main-bg h-svh lg:h-screen grid grid-rows-[8.5rem_1fr]">
               <AppHeader />
               <Routes>{routes}</Routes>
             </div>

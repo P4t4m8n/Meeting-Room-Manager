@@ -33,6 +33,8 @@ BEGIN
         HasTeamMeeting BIT NOT NULL DEFAULT 0,
         HasConferenceCall BIT NOT NULL DEFAULT 0,
         ImageUrl NVARCHAR(500) NULL,
+        PublicCloudinaryId NVARCHAR(255) NULL,
+        Notes NVARCHAR(1000) NULL,
         Status NVARCHAR(20) NOT NULL DEFAULT 'Active',
         CONSTRAINT chk_room_status CHECK (Status IN ('Active', 'Inactive', 'Maintenance')),
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
@@ -77,8 +79,8 @@ BEGIN
     CREATE TABLE MeetingSchema.Bookings
     (
         Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-        RoomId UNIQUEIDENTIFIER  NULL,
-        UserId UNIQUEIDENTIFIER  NULL,
+        RoomId UNIQUEIDENTIFIER NULL,
+        UserId UNIQUEIDENTIFIER NULL,
         StartTime DATETIME2 NOT NULL,
         EndTime DATETIME2 NOT NULL,
         BufferMinutes INT NOT NULL DEFAULT 0,

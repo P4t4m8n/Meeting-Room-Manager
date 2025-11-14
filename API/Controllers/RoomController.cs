@@ -1,6 +1,9 @@
 using API.Attributes;
 using API.Data;
+using API.Dtos.Cloudinary;
+using API.Dtos.Http;
 using API.Dtos.Room;
+using API.Interfaces;
 using API.Models;
 using API.QueryParams;
 using Dapper;
@@ -15,17 +18,22 @@ namespace API.Controllers
     public class RoomsController : ControllerBase
     {
         private readonly DataContextDapper _dapper;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public RoomsController(IConfiguration config)
+        public RoomsController(IConfiguration config, ICloudinaryService cloudinaryService)
         {
             _dapper = new DataContextDapper(config);
+            _cloudinaryService = cloudinaryService;
         }
 
 
         [HttpGet("")]
         public async Task<ActionResult<IEnumerable<RoomDto>>> SearchRooms([FromQuery] RoomQueryParams roomQueryParams)
         {
-            string sql = @"
+            try
+            {
+
+                string sql = @"
                 SELECT 
                     Id ,
                     Name,
@@ -50,26 +58,48 @@ namespace API.Controllers
                     OFFSET ISNULL(@Offset, 0) ROWS
                      FETCH NEXT ISNULL(@Limit, 10) ROWS ONLY";
 
-            DateTime? searchStartTime = roomQueryParams.StartTime?.AddMinutes(-roomQueryParams.BufferMinutes ?? 0);
-            DateTime? searchEndTime = roomQueryParams.EndTime?.AddMinutes(roomQueryParams.BufferMinutes ?? 0);
+                DateTime? searchStartTime = roomQueryParams.StartTime?.AddMinutes(-roomQueryParams.BufferMinutes ?? 0);
+                DateTime? searchEndTime = roomQueryParams.EndTime?.AddMinutes(roomQueryParams.BufferMinutes ?? 0);
 
-            int limit = roomQueryParams.Limit ?? 10;
-            int offset = roomQueryParams.Offset ?? 0;
+                int limit = roomQueryParams.Limit ?? 10;
+                int offset = roomQueryParams.Offset ?? 0;
 
-            DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@SearchStartTime", searchStartTime);
-            parameters.Add("@SearchEndTime", searchEndTime);
-            parameters.Add("@Capacity", roomQueryParams.Capacity);
-            parameters.Add("@Floor", roomQueryParams.Floor);
-            parameters.Add("@HasProjector", roomQueryParams.HasProjector);
-            parameters.Add("@HasTeamMeeting", roomQueryParams.HasTeamMeeting);
-            parameters.Add("@HasConferenceCall", roomQueryParams.HasConferenceCall);
-            parameters.Add("@Limit", limit);
-            parameters.Add("@Offset", offset);
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@SearchStartTime", searchStartTime);
+                parameters.Add("@SearchEndTime", searchEndTime);
+                parameters.Add("@Capacity", roomQueryParams.Capacity);
+                parameters.Add("@Floor", roomQueryParams.Floor);
+                parameters.Add("@HasProjector", roomQueryParams.HasProjector);
+                parameters.Add("@HasTeamMeeting", roomQueryParams.HasTeamMeeting);
+                parameters.Add("@HasConferenceCall", roomQueryParams.HasConferenceCall);
+                parameters.Add("@Limit", limit);
+                parameters.Add("@Offset", offset);
 
-            IEnumerable<Room> rooms = await _dapper.LoadData<Room>(sql, parameters);
+                IEnumerable<RoomDto> rooms = await _dapper.LoadData<RoomDto>(sql, parameters) ?? [];
+                HttpResponseDTO<IEnumerable<RoomDto>> response = new()
+                {
+                    Data = rooms,
+                    StatusCode = 201,
+                    Message = "Room created successfully.",
+                };
 
-            return Ok(rooms);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                HttpErrorResponseDTO err = new()
+                {
+                    StatusCode = 500,
+                    Message = "Unexpected error occurred while getting a rooms.",
+                    Errors = new Dictionary<string, string>
+                    {
+                        { "ExceptionMessage", ex.Message },
+                        { "StackTrace", ex.StackTrace ?? "N/A" }
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
         }
 
         [HttpGet("{id}")]
@@ -104,29 +134,21 @@ namespace API.Controllers
 
         [RequireRole("Admin")]
         [HttpPost("edit")]
-        public async Task<IActionResult> CreateRoom([FromBody] RoomCreateDto roomDto)
+        public async Task<IActionResult> CreateRoom([FromForm] RoomCreateDto roomDto, [FromForm] IFormFile? image)
         {
             try
             {
-                string sql = @"
-                INSERT INTO MeetingSchema.Rooms 
-                ( Name, Floor, Capacity, HasProjector, HasTeamMeeting, HasConferenceCall, ImageUrl, Status)
-                OUTPUT 
-                    INSERTED.Id,
-                    INSERTED.Name,
-                    INSERTED.Floor,
-                    INSERTED.Capacity,
-                    INSERTED.HasProjector,
-                    INSERTED.HasTeamMeeting,
-                    INSERTED.HasConferenceCall,
-                    INSERTED.ImageUrl,
-                    INSERTED.Status,
-                    INSERTED.CreatedAt,
-                    INSERTED.UpdatedAt
-                VALUES 
-                ( @Name, @Floor, @Capacity, @HasProjector, @HasTeamMeeting, @HasConferenceCall, @ImageUrl, @Status);
-                
-        ";
+                string sql = @"EXEC MeetingSchema.usp_Rooms_Create
+                    @Name= @Name,
+                    @Floor = @Floor,
+                    @Capacity = @Capacity,
+                    @HasProjector = @HasProjector,
+                    @HasTeamMeeting     = @HasTeamMeeting,
+                    @HasConferenceCall = @HasConferenceCall,
+                    @ImageUrl = @ImageUrl,
+                    @PublicCloudinaryId = @PublicCloudinaryId,
+                    @Notes = @Notes,
+                    @Status = @Status;";
 
                 var parameters = new DynamicParameters();
                 parameters.Add("@Name", roomDto.Name);
@@ -135,24 +157,62 @@ namespace API.Controllers
                 parameters.Add("@HasProjector", roomDto.HasProjector);
                 parameters.Add("@HasTeamMeeting", roomDto.HasTeamMeeting);
                 parameters.Add("@HasConferenceCall", roomDto.HasConferenceCall);
-                parameters.Add("@ImageUrl", roomDto.ImageUrl);
-                parameters.Add("@Status", "Active");
+                parameters.Add("@Notes", roomDto?.Notes);
+                parameters.Add("@Status", roomDto?.Status.ToString());//Controller map to Enum so the DB cant check it, convert to string
 
+                //Only for debugging, image in required otherwise
+                if (image != null)
+                {
 
-                Room? createdRoom = await _dapper.InsertAndReturn<Room>(sql, parameters);
+                    CloudinaryResDTO? cloudinaryResDTO = await _cloudinaryService.UploadImage(image);
+                    parameters.Add("@ImageUrl", cloudinaryResDTO?.SecureUrl);
+                    parameters.Add("@PublicCloudinaryId", cloudinaryResDTO?.PublicId);
+                }
+                else
+                {
+                    parameters.Add("@ImageUrl", null);
+                    parameters.Add("@PublicCloudinaryId", null);
+                }
+
+                RoomDto? createdRoom = await _dapper.InsertAndReturn<RoomDto>(sql, parameters);
 
                 if (createdRoom == null)
                 {
-                    // This case might occur if the OUTPUT clause fails or returns nothing.
-                    return BadRequest("Failed to create Room.");
+                    HttpErrorResponseDTO err = new()
+                    {
+                        StatusCode = 400,
+                        Message = "Failed to create Room.",
+                        Errors = new Dictionary<string, string>
+                            {
+                                { "CreationError", "The room could not be created due to an unknown error." }
+                            }
+                    };
+                    return BadRequest(err);
                 }
 
-                return Ok(createdRoom);
-            }
-            catch (System.Exception ex)
-            {
+                HttpResponseDTO<RoomDto> response = new()
+                {
+                    Data = createdRoom,
+                    StatusCode = 201,
+                    Message = "Room created successfully.",
+                };
 
-                return StatusCode(500, $"An error occurred while processing your request -> {ex.Message}");
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                HttpErrorResponseDTO err = new()
+                {
+                    StatusCode = 500,
+                    Message = "Unexpected error occurred while creating a room.",
+                    Errors = new Dictionary<string, string>
+                    {
+                        { "ExceptionMessage", ex.Message },
+                        { "StackTrace", ex.StackTrace ?? "N/A" }
+                    }
+                };
+
+                return StatusCode(500, err);
             }
         }
 

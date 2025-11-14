@@ -11,6 +11,8 @@ namespace API.Dtos.Room
         public bool? HasTeamMeeting { get; set; }
         public bool? HasConferenceCall { get; set; }
         public string? ImageUrl { get; set; }
+        public string? PublicCloudinaryId { get; set; }
+        public string? Notes { get; set; }
         public RoomStatus? Status { get; set; }
 
     }

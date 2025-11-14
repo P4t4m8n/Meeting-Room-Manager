@@ -30,65 +30,65 @@ namespace API.Controllers
             _encryptionService = encryptionService;
         }
 
-        // [AllowAnonymous]
-        // [HttpPost("sign-in")]
-        // public async Task<ActionResult<UserDto>> SignIn(AuthSignInDto signInDto)
-        // {
+        [AllowAnonymous]
+        [HttpPost("sign-in")]
+        public async Task<ActionResult<UserDto>> SignIn(AuthSignInDto signInDto)
+        {
 
-        //     if (string.IsNullOrEmpty(signInDto.Email) || string.IsNullOrEmpty(signInDto.Password))
-        //     {
-        //         return BadRequest(new { message = "Email and password are required" });
-        //     }
+            if (string.IsNullOrEmpty(signInDto.Email) || string.IsNullOrEmpty(signInDto.Password))
+            {
+                return BadRequest(new { message = "Email and password are required" });
+            }
 
 
-        //     DynamicParameters parameters = new();
-        //     parameters.Add("@Email", signInDto.Email);
+            DynamicParameters parameters = new();
+            parameters.Add("@Email", signInDto.Email);
 
-        //     AuthConfirmationDto? authConfirmation = await _authService.GetPasswordHashAndSalt(parameters);
+            AuthConfirmationDto? authConfirmation = await _authService.GetPasswordHashAndSalt(parameters);
 
-        //     if (authConfirmation == null)
-        //     {
-        //         return Unauthorized(new { message = "Invalid email or password" });
-        //     }
+            if (authConfirmation == null)
+            {
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
 
-        //     byte[] passwordHash = _authService.GetPasswordHash(signInDto.Password, authConfirmation.PasswordSalt);
+            byte[] passwordHash = _authService.GetPasswordHash(signInDto.Password, authConfirmation.PasswordSalt);
 
-        //     for (int i = 0; i < passwordHash.Length; i++)
-        //     {
-        //         if (passwordHash[i] != authConfirmation.PasswordHash[i])
-        //         {
-        //             return Unauthorized(new { message = "Invalid email or password" });
-        //         }
-        //     }
+            for (int i = 0; i < passwordHash.Length; i++)
+            {
+                if (passwordHash[i] != authConfirmation.PasswordHash[i])
+                {
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+            }
 
-        //     string userSelectSql = "EXEC MeetingSchema.usp_Users_GetUserDetails @Email=@Email";
-        //     User? user = await _contextDapper.QuerySingleOrDefaultAsync<User>(userSelectSql, parameters);
+            string userSelectSql = "EXEC MeetingSchema.usp_Users_GetUserDetails @Email=@Email";
+            User? user = await _contextDapper.QuerySingleOrDefaultAsync<User>(userSelectSql, parameters);
 
-        //     if (user == null || user.Id == Guid.Empty)
-        //     {
-        //         return Unauthorized(new { message = "Invalid email or password" });
-        //     }
+            if (user == null || user.Id == Guid.Empty)
+            {
+                return Unauthorized(new { message = "Invalid email or password" });
+            }
 
-        //     string token = _authService.CreateToken(user.Id.ToString()!);
+            string token = _authService.CreateToken(user.Id.ToString()!);
 
-        //     Response.Cookies.Append("AuthToken", token, new CookieOptions
-        //     {
-        //         HttpOnly = true,
-        //         Secure = true,
-        //         SameSite = SameSiteMode.None,
-        //         Expires = DateTimeOffset.UtcNow.AddDays(1)
-        //     });
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.None,
+                Expires = DateTimeOffset.UtcNow.AddDays(1)
+            });
 
-        //     UserDto userDto = new()
-        //     {
-        //         Id = user.Id,
-        //         Email = user.Email,
-        //         Name = user.Name,
-        //         Role = user.Role
-        //     };
+            UserDto userDto = new()
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Role = user.Role
+            };
 
-        //     return Ok(userDto);
-        // }
+            return Ok(userDto);
+        }
 
         // [AllowAnonymous]
         // [HttpPost("sign-up")]
