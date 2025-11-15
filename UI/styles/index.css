@@ -10,7 +10,8 @@
 
   --color-main-blue: #229ebc;
   --color-main-blue-dark: #04364E;
-  --color-main-white: oklch(1 0 0);
+  --color-main-white: rgb(255, 255, 255);
+  --color-main-white-border: rgba(255, 255, 255, 0.25);
 
   --height-mobile-header:8.5rem;
   --height-mobile-main: calc(100svh - 8.5rem);

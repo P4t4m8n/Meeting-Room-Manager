@@ -3,8 +3,8 @@ import type { IBookingDTO } from "./BookingDTO";
 import type { IDTO } from "./DTO.model";
 
 export const ROOM_STATUS = ["Active", "Inactive", "Maintenance"] as const;
-export type RoomStatus = (typeof ROOM_STATUS)[number];
-export const ROOM_STATUS_LABELS: Record<RoomStatus, string> = {
+export type TRoomStatus = (typeof ROOM_STATUS)[number];
+export const ROOM_STATUS_LABELS: Record<TRoomStatus, string> = {
   Active: "פעיל",
   Inactive: "לא פעיל",
   Maintenance: "תחזוקה",
@@ -13,7 +13,7 @@ export const ROOM_STATUS_LABELS: Record<RoomStatus, string> = {
 export interface IRoomDTO extends IDTO {
   name?: string;
 
-  status?: RoomStatus;
+  status?: TRoomStatus;
   capacity?: number;
   floor?: number;
   hasProjector?: boolean;
@@ -37,6 +37,6 @@ export interface IRoomFilter extends IFilterDTO {
   hasProjector?: boolean | null;
   hasTeamMeeting?: boolean | null;
   hasConferenceCall?: boolean | null;
-  status?: RoomStatus | null;
+  status?: TRoomStatus | null;
   roomName?: string | null;
 }
