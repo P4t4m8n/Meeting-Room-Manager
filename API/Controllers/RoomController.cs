@@ -105,7 +105,10 @@ namespace API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RoomDto>> GetRoomById(Guid id)
         {
-            string sql = @"
+            try
+            {
+
+                string sql = @"
                 SELECT 
                     Id,
                     Name,
@@ -121,15 +124,51 @@ namespace API.Controllers
                 FROM MeetingSchema.Rooms
                 WHERE Id = @id";
 
-            DynamicParameters parameters = new DynamicParameters();
-            parameters.Add("@id", id);
+                DynamicParameters parameters = new DynamicParameters();
+                parameters.Add("@id", id);
 
-            Room? room = await _dapper.QuerySingleOrDefaultAsync<Room>(sql, parameters);
+                RoomDto? room = await _dapper.QuerySingleOrDefaultAsync<RoomDto>(sql, parameters);
 
-            if (room == null)
-                return NotFound(new { message = "Room not found" });
+                if (room == null)
+                {
+                    HttpErrorResponseDTO err = new()
+                    {
+                        StatusCode = 404,
+                        Message = "Room not found.",
+                        Errors = new Dictionary<string, string>
+                            {
+                                { "NotFoundError", "The room with the specified ID does not exist." }
+                            }
+                    };
 
-            return Ok(room);
+                    return NotFound(err);
+                }
+
+                HttpResponseDTO<RoomDto> response = new()
+                {
+                    Data = room,
+                    StatusCode = 200,
+                    Message = "Room found.",
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+
+                HttpErrorResponseDTO err = new()
+                {
+                    StatusCode = 500,
+                    Message = "Unexpected error occurred while creating a room.",
+                    Errors = new Dictionary<string, string>
+                    {
+                        { "ExceptionMessage", ex.Message },
+                        { "StackTrace", ex.StackTrace ?? "N/A" }
+                    }
+                };
+
+                return StatusCode(500, err);
+            }
         }
 
         [RequireRole("Admin")]

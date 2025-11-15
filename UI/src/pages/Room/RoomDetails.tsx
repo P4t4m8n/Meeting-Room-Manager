@@ -1,9 +1,9 @@
 import type { IRoomDTO } from "@/models/RoomDTO";
 import { roomsService } from "@/services/room.service";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 
-export default function AdminRoomDetailsPage() {
+export default function RoomDetails() {
   const [room, setRoom] = useState<IRoomDTO | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { roomId } = useParams<{ roomId: string }>();

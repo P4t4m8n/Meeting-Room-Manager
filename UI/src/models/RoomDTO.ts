@@ -28,12 +28,15 @@ export interface IRoomEditDTO extends Omit<IRoomDTO, "bookings"> {
 }
 
 export interface IRoomFilter extends IFilterDTO {
-  startTime?: string | null | Date;
-  endTime?: string | null | Date;
+  startTime?: string | null;
+  startDate?: string | null | Date;
+  endTime?: string | null ;
+  endDate?: string | null | Date;
   capacity?: number | null;
   floor?: number | null;
   hasProjector?: boolean | null;
   hasTeamMeeting?: boolean | null;
   hasConferenceCall?: boolean | null;
   status?: RoomStatus | null;
+  roomName?: string | null;
 }

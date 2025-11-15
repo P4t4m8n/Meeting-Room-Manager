@@ -9,6 +9,7 @@ import AdminUsersPage from "./pages/Admin/AdminUsersPage";
 import AdminRoomsPage from "./pages/Admin/Rooms/AdminRoomsPage";
 import AdminRoomEditPage from "./pages/Admin/Rooms/AdminRoomEditPage";
 import AdminRoomDetailsPage from "./pages/Admin/Rooms/AdminRoomDetailsPage";
+import RoomDetails from "./pages/Room/RoomDetails";
 
 interface IRouteConfig {
   path: string;
@@ -46,6 +47,13 @@ const ADMIN_ROUTES: IRouteConfig[] = [
   },
 ];
 
+const ROOMS_ROUTES: IRouteConfig[] = [
+  {
+    path: "rooms/:roomId",
+    element: <RoomDetails />,
+  },
+];
+
 export const CORE_ROUTES: IRouteConfig[] = [
   {
     path: "/",
@@ -64,6 +72,7 @@ export const CORE_ROUTES: IRouteConfig[] = [
     path: ORDERS_PAGE_ROUTE,
     element: <OrdersPage />,
   },
+  ...ROOMS_ROUTES
 ];
 
 export const ROUTES: IRouteConfig[] = [...CORE_ROUTES];
