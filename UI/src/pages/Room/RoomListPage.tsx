@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
-import type { IRoomDTO, IRoomFilter } from "../../../models/RoomDTO";
-import { roomsService } from "../../../services/room.service";
-import RoomsFilter from "../../../components/Rooms/RoomsFilter";
+import type { IRoomDTO, IRoomFilter } from "../../models/RoomDTO";
+import { roomsService } from "../../services/room.service";
+import RoomsFilter from "../../components/Rooms/RoomsFilter";
 import RoomsList from "@/components/Rooms/RoomsList";
-
-export default function AdminRoomsPage() {
+import { IsDeletingContext } from "@/context/isDeletingContext";
+export default function RoomListPage() {
   const [rooms, setRooms] = useState<IRoomDTO[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const searchRooms = useCallback(async (filter: IRoomFilter = {}) => {
     setIsLoading(true);
@@ -26,7 +27,16 @@ export default function AdminRoomsPage() {
   }, [searchRooms]);
 
   const deleteRoom = async (itemId: string) => {
-    console.log("🚀 ~ deleteRoom ~ itemId:", itemId);
+    try {
+      setIsDeleting(true);
+      await roomsService.remove(itemId);
+      //Lazy Refresh the room list after deletion refactor later when decide how to handle global state or caching
+      searchRooms({});
+    } catch (error) {
+      console.error("Failed to delete room:", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (isLoading) {
@@ -42,7 +52,9 @@ export default function AdminRoomsPage() {
 
       <RoomsFilter searchRooms={searchRooms} />
 
-      <RoomsList rooms={rooms} deleteRoom={deleteRoom} />
+      <IsDeletingContext.Provider value={isDeleting}>
+        <RoomsList rooms={rooms} deleteRoom={deleteRoom} />
+      </IsDeletingContext.Provider>
     </main>
   );
 }

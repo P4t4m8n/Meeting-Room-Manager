@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setIsLoading(true);
         const res = await authService.getSessionUser();
-        console.log("🚀 ~ fetchUser ~ res:", res)
         setUser(res.data);
       } catch (error) {
         console.error("Error fetching user:", error);

@@ -3,6 +3,7 @@ import { type IRoomDTO } from "../../models/RoomDTO";
 import IconPeople from "../Icons/IconPeople";
 import RoomStatus from "./RoomStatus";
 import RoomFloor from "./RoomFloor";
+import { useIsDeleting } from "@/hooks/useIsDeleting";
 const DEFAULT_IMAGE =
   "https://res.cloudinary.com/dyzqa6uuu/image/upload/v1742384690/hof/yeq1yyvb1tdfyuwuxfga.avif";
 interface IRoomPreviewProps {
@@ -16,6 +17,7 @@ export default function RoomPreview({
   isAdmin,
 }: IRoomPreviewProps) {
   const { id, name, status, capacity, floor, imageUrl } = room;
+  const isDeleting = useIsDeleting();
 
   return (
     <li className="rounded-2xl shadow-[0_0_0_1px_var(--color-main-white)]">
@@ -45,7 +47,7 @@ export default function RoomPreview({
           {isAdmin ? (
             <Link
               className="px-2 py-1 bg-main-white rounded"
-              to={`rooms/edit/${id}`}
+              to={`/rooms/edit/${id}`}
             >
               ערוך חדר
             </Link>
@@ -54,6 +56,7 @@ export default function RoomPreview({
             <button
               className="px-2 py-1 bg-main-white rounded"
               onClick={() => deleteItem(id!)}
+              disabled={isDeleting}
             >
               מחק
             </button>

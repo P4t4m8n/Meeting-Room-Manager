@@ -1,18 +1,19 @@
-import IconConference from "@/components/Icons/IconConfrenace";
+import IconConference from "@/components/Icons/IconConference";
 import IconPeople from "@/components/Icons/IconPeople";
 import IconVideoConf from "@/components/Icons/IconVideoConf";
 import RoomAmenity from "@/components/Rooms/RoomAmenity";
 import RoomFloor from "@/components/Rooms/RoomFloor";
 import RoomStatus from "@/components/Rooms/RoomStatus";
+import BackButton from "@/components/ui/BackButton";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageBack } from "@/hooks/usePageBack";
 import type { IRoomDTO } from "@/models/RoomDTO";
 import { roomsService } from "@/services/room.service";
-import { ArrowRight, ProjectorIcon } from "lucide-react";
+import { ProjectorIcon } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 
-export default function RoomDetails() {
+export default function RoomDetailsPage() {
   const [room, setRoom] = useState<IRoomDTO | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -81,13 +82,7 @@ export default function RoomDetails() {
   const isAdmin = user?.role === "Admin";
   return (
     <main className="flex flex-col h-mobile-main overflow-auto gap-4 p-4">
-      <button
-        onClick={onBack}
-        className="text-main-white flex gap-1 items-center mb-4 w-fit hover:cursor-pointer"
-      >
-        <ArrowRight className=" w-4 h-4  stroke-main-white/75 fill-main-bg" />
-        <p>חזור</p>
-      </button>
+      <BackButton />
 
       <img className="rounded-xl shadow-2xs" src={imageUrl} alt={name} />
 
@@ -136,9 +131,9 @@ export default function RoomDetails() {
       <div className="flex justify-center gap-2 text-main-bg font-semibold pt-4">
         <Link
           className="p-2 bg-main-white rounded w-full text-center "
-          to={`/booking/new/${id}`}
+          to={`/bookings/edit/new/${id}`}
         >
-          הזמן חדר{" "}
+          הזמן חדר
         </Link>
         {isAdmin ? (
           <Link

@@ -36,7 +36,6 @@ interface IRoomsFilterProps {
 
 export default function RoomsFilter({ searchRooms }: IRoomsFilterProps) {
   const [filter, setFilter] = useState<IRoomFilter>(INITIAL_FILTER);
-  console.log("🚀 ~ RoomsFilter ~ filter:", filter);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +57,6 @@ export default function RoomsFilter({ searchRooms }: IRoomsFilterProps) {
     id: string,
     type: "date" | "time"
   ) => {
-    console.log("🚀 ~ handleDateChange ~ value:", value);
     const filterKey = (id + toTitle(type)) as keyof IRoomFilter;
 
     setFilter((prev) => ({ ...prev, [filterKey]: value || null }));

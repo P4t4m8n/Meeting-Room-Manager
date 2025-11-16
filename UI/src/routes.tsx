@@ -1,15 +1,14 @@
-import type { ReactNode } from "react";
 import { Route } from "react-router";
+
 import AuthPage from "./pages/AuthPage";
 import HomePage from "./pages/HomePage";
 import AdminPage from "./pages/Admin/AdminPage";
-import OrdersPage from "./pages/OrdersPage";
-import AdminBookingsPage from "./pages/Admin/AdminBookingsPage";
-import AdminUsersPage from "./pages/Admin/AdminUsersPage";
-import AdminRoomsPage from "./pages/Admin/Rooms/AdminRoomsPage";
-import AdminRoomEditPage from "./pages/Admin/Rooms/AdminRoomEditPage";
-import AdminRoomDetailsPage from "./pages/Admin/Rooms/AdminRoomDetailsPage";
-import RoomDetails from "./pages/Room/RoomDetails";
+import RoomDetails from "./pages/Room/RoomDetailsPage";
+import RoomEditPage from "./pages/Room/RoomEditPage";
+import RoomListPage from "./pages/Room/RoomListPage";
+import BookingEditPage from "./pages/Bookings/BookingEditPage";
+
+import type { ReactNode } from "react";
 
 interface IRouteConfig {
   path: string;
@@ -27,30 +26,38 @@ export const renderRoutes = (routes: IRouteConfig[]) => {
 
 const AUTH_PAGE_ROUTE = "/auth";
 const ADMIN_PAGE_ROUTE = "/admin";
-const ORDERS_PAGE_ROUTE = "/orders";
+const BOOKINGS_PAGE_ROUTE = "/bookings";
+const ROOMS_PAGE_ROUTE = "/rooms";
 
 const ADMIN_ROUTES: IRouteConfig[] = [
   {
-    path: "bookings",
-    element: <AdminBookingsPage />,
-  },
-  {
-    path: "rooms",
-    element: <AdminRoomsPage />,
-  },
-  { path: "rooms/edit/:roomId", element: <AdminRoomEditPage /> },
-  { path: "rooms/edit/", element: <AdminRoomEditPage /> },
-  { path: "rooms/:roomId", element: <AdminRoomDetailsPage /> },
-  {
-    path: "users",
-    element: <AdminUsersPage />,
+    path: ADMIN_PAGE_ROUTE,
+    element: <AdminPage />,
+    children: [],
   },
 ];
 
 const ROOMS_ROUTES: IRouteConfig[] = [
+  { path: ROOMS_PAGE_ROUTE, element: <RoomListPage /> },
   {
-    path: "rooms/:roomId",
+    path: ROOMS_PAGE_ROUTE + "/:roomId",
     element: <RoomDetails />,
+  },
+  { path: ROOMS_PAGE_ROUTE + "/edit", element: <RoomEditPage /> },
+  { path: ROOMS_PAGE_ROUTE + "/edit/:roomId", element: <RoomEditPage /> },
+];
+
+const BOOKING_ROUTES: IRouteConfig[] = [
+  {
+    path: BOOKINGS_PAGE_ROUTE + "/edit/:bookingId/:roomId",
+    element: <BookingEditPage />,
+  },
+];
+
+const AUTH_ROUTES: IRouteConfig[] = [
+  {
+    path: AUTH_PAGE_ROUTE,
+    element: <AuthPage />,
   },
 ];
 
@@ -59,20 +66,12 @@ export const CORE_ROUTES: IRouteConfig[] = [
     path: "/",
     element: <HomePage />,
   },
-  {
-    path: AUTH_PAGE_ROUTE,
-    element: <AuthPage />,
-  },
-  {
-    path: ADMIN_PAGE_ROUTE,
-    element: <AdminPage />,
-    children: ADMIN_ROUTES,
-  },
-  {
-    path: ORDERS_PAGE_ROUTE,
-    element: <OrdersPage />,
-  },
-  ...ROOMS_ROUTES
 ];
 
-export const ROUTES: IRouteConfig[] = [...CORE_ROUTES];
+export const ROUTES: IRouteConfig[] = [
+  ...CORE_ROUTES,
+  ...ADMIN_ROUTES,
+  ...AUTH_ROUTES,
+  ...ROOMS_ROUTES,
+  ...BOOKING_ROUTES,
+];

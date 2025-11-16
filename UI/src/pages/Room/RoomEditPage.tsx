@@ -1,24 +1,22 @@
 import { useNavigate, useParams } from "react-router";
-import { usePageBack } from "../../../hooks/usePageBack";
+import { usePageBack } from "../../hooks/usePageBack";
 import { useEffect, useState } from "react";
-import { roomsService } from "../../../services/room.service";
-import roomUtil from "../../../utils/room.util";
+import { roomsService } from "../../services/room.service";
+import roomUtil from "../../utils/room.util";
 import {
   ROOM_STATUS,
   ROOM_STATUS_LABELS,
   type IRoomEditDTO,
-} from "../../../models/RoomDTO";
-import handleInputChange from "../../../utils/form.util";
-import IconCheck from "../../../components/Icons/IconCheck";
-import InputImage from "../../../components/Form/InputImage";
-
-export default function AdminRoomEditPage() {
+} from "../../models/RoomDTO";
+import handleInputChange from "../../utils/form.util";
+import IconCheck from "../../components/Icons/IconCheck";
+import InputImage from "../../components/Form/InputImage";
+export default function RoomEditPage() {
   const { roomId } = useParams<{ roomId: string }>();
   const { navBack } = usePageBack();
   const navigate = useNavigate();
 
   const [roomToEdit, setRoomToEdit] = useState<IRoomEditDTO | null>(null);
-  console.log("🚀 ~ AdminRoomEditPage ~ roomToEdit:", roomToEdit);
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
@@ -32,7 +30,7 @@ export default function AdminRoomEditPage() {
 
         setRoomToEdit(_roomToEdit);
       } catch (error) {
-        console.log("🚀 ~ initRoomToEdit ~ error:", error);
+        console.error("🚀 ~ initRoomToEdit ~ error:", error);
       } finally {
         setIsFetching(false);
       }
@@ -98,12 +96,11 @@ export default function AdminRoomEditPage() {
       }
 
       const savedRoomId = (await roomsService.save(formData)).data.id;
-      console.log("🚀 ~ onSubmit ~ savedRoomId:", savedRoomId);
 
       if (!savedRoomId) throw new Error("Failed to save room");
       navigate(`/admin/rooms/${savedRoomId}`);
     } catch (error) {
-      console.log("🚀 ~ onSubmit ~ error:", error);
+      console.error("🚀 ~ onSubmit ~ error:", error);
     } finally {
       setIsSaving(false);
     }
