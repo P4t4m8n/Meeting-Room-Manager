@@ -25,6 +25,7 @@ import {
 } from "@/models/BookingDTO";
 import { useAuth } from "@/hooks/useAuth";
 import { TrashIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function BookingEditPage() {
   const { bookingId, roomId } = useParams<{
@@ -91,7 +92,7 @@ export default function BookingEditPage() {
 
       const attendees = prev.attendees ? [...prev.attendees] : [];
 
-      const idx = attendees?.findIndex((a) => a.id === attendee.id);
+      const idx = attendees?.findIndex((a) => a.email === attendee.email);
       if (idx > -1) {
         return {
           ...prev,
@@ -130,9 +131,10 @@ export default function BookingEditPage() {
         </h2>
       </header>
 
-      <form className="flex flex-col gap-4">
-        <div className="flex gap-4">
-          <div className="w-full">
+      <form className="flex flex-col gap-4 h-full">
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="">
             <DateTimePickerPopover
               id="start"
               timeSlotsConfig={{
@@ -146,7 +148,7 @@ export default function BookingEditPage() {
             />
           </div>
 
-          <div className="w-full">
+          <div className="">
             <DateTimePickerPopover
               id="end"
               timeSlotsConfig={{
@@ -196,9 +198,10 @@ export default function BookingEditPage() {
             </p>
           </div>
         )}
+        
         <div className="shadow-[0_0_0_1px_var(--color-main-white-border)] p-1 rounded text-main-white">
           <h3 className="font-semibold">מוזמנים</h3>
-          <ul className="flex flex-col gap-2 p-1">
+          <ul className="flex flex-col gap-2 p-1 h-32 overflow-auto">
             <li className="flex items-center justify-between">
               <p>הוסף מוזמן</p>
               <AttendeeEdit
@@ -212,16 +215,12 @@ export default function BookingEditPage() {
                     key={attendee.email}
                     className="flex items-center justify-between"
                   >
-                    <div className="flex flex-col gap-1">
-                      <p>
-                        <span>שם:</span>
-                        <span>{attendee.name}</span>
-                      </p>
-                      <p>
-                        <span>אימייל:</span>
-                        <span>{attendee.email}</span>
-                      </p>
-                    </div>
+                    <p className="inline-flex gap-1">
+                      <span>אימייל:</span>
+                      <span className="text-main-white-border">
+                        {attendee.email}
+                      </span>
+                    </p>
                     <div className="flex items-center gap-2">
                       <AttendeeEdit
                         attendee={attendee}
@@ -237,7 +236,13 @@ export default function BookingEditPage() {
           </ul>
         </div>
 
-        {room ? <RoomPreview room={room} /> : null}
+        {room ? (
+ 
+            <RoomPreview room={room} isRoomList={false} />
+     
+        ) : null}
+
+        <Button variant="outline" className="mt-auto" >{bookingId ? "שמור שינויים" : "צור פגישה"}</Button>
       </form>
     </main>
   );

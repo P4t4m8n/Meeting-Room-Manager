@@ -4,25 +4,32 @@ import IconPeople from "../Icons/IconPeople";
 import RoomStatus from "./RoomStatus";
 import RoomFloor from "./RoomFloor";
 import { useIsDeleting } from "@/hooks/useIsDeleting";
+import { cn } from "@/lib/utils";
 const DEFAULT_IMAGE =
   "https://res.cloudinary.com/dyzqa6uuu/image/upload/v1742384690/hof/yeq1yyvb1tdfyuwuxfga.avif";
 interface IRoomPreviewProps {
   room: IRoomDTO;
   deleteItem?: (itemId: string) => void;
   isAdmin?: boolean;
+  isRoomList?: boolean;
 }
 export default function RoomPreview({
   room,
   deleteItem,
   isAdmin,
+  isRoomList = true,
 }: IRoomPreviewProps) {
   const { id, name, status, capacity, floor, imageUrl } = room;
   const isDeleting = useIsDeleting();
 
+  const liStyle =  cn(isRoomList ? "" : "grid grid-cols-2 items-center","rounded-2xl shadow-[0_0_0_1px_var(--color-main-white)]");
+
+  const imgStyle = cn(isRoomList ? "rounded-t-2xl" : "h-full object-cover rounded-r-2xl");
+
   return (
-    <li className="rounded-2xl shadow-[0_0_0_1px_var(--color-main-white)]">
+    <li className={liStyle}>
       <img
-        className="rounded-t-2xl"
+        className={imgStyle}
         src={imageUrl || DEFAULT_IMAGE}
         alt={name || "Room Image"}
         onError={(e) => {
