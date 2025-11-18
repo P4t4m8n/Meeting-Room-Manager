@@ -1,18 +1,11 @@
 import type { IBookingAttendeeDTO } from "@/models/BookingAttendeeDTO";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
+
 import { EditIcon, PlusIcon } from "lucide-react";
 import InputText from "../Form/InputText";
-import { Button } from "../ui/button";
 import { useState } from "react";
 import handleInputChange from "@/utils/form.util";
+import { useModel } from "@/hooks/useModel";
+import ModelOverlay from "../ui/ModelOverlay";
 
 interface IAttendeeEditProps {
   attendee: IBookingAttendeeDTO;
@@ -23,7 +16,11 @@ export default function AttendeeEdit({
   attendee,
   saveAttendee,
 }: IAttendeeEditProps) {
-  const [open, setOpen] = useState(false);
+  const { isOpen, modelRef, setIsOpen, handleModel } = useModel<HTMLDivElement>(
+    {}
+  );
+  console.log("🚀 ~ AttendeeEdit ~ isOpen:", isOpen);
+
   const [attendeeToEdit, setAttendeeToEdit] =
     useState<IBookingAttendeeDTO>(attendee);
   const onClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -31,54 +28,69 @@ export default function AttendeeEdit({
     e.stopPropagation();
 
     saveAttendee(attendeeToEdit);
-    setOpen(false);
+    setIsOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <div className="h-5 w-5 leading-0">
-        <DialogTrigger>{attendee ? <EditIcon className="h-full w-full" /> : <PlusIcon />}</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{attendee ? "ערוך מוזמן" : "הוסף מוזמן"}</DialogTitle>
-          </DialogHeader>
+    <div className="h-5 w-5">
+      <button onClick={handleModel} type="button">
+        {attendee ? <EditIcon className="h-full w-full" /> : <PlusIcon />}
+      </button>
+
+      <ModelOverlay isOpen={isOpen}>
+
+        <div
+          ref={modelRef}
+          className={` ${
+            isOpen ? "opacity-100" : " opacity-0"
+          } transition-opacity duration-300  z-10 bg-main-white rounded-lg border-8 border-main-bg grid gap-4 text-main-bg  p-4 `}
+        >
+          <header>
+            <h3 className="text-lg font-semibold">
+              {attendee.email ? "ערוך מוזמן" : "הוסף מוזמן"}
+            </h3>
+          </header>
+
           <InputText
             inputProps={{
               name: "name",
               id: "name",
               defaultValue: attendee?.name || "",
               onChange: (e) => handleInputChange(e, setAttendeeToEdit),
+              placeholder: "שם מוזמן",
             }}
             labelProps={{
               htmlFor: "name",
               children: "שם מוזמן",
             }}
           />
-          <div className="">
-            <label id="email" className="">
-              אימייל
-            </label>
-            <input
-              name="email"
-              id="email"
-              placeholder="אימייל"
-              className=""
-              type="email"
-              onChange={(e) => handleInputChange(e, setAttendeeToEdit)}
-            />
+
+          <InputText
+            inputProps={{
+              name: "email",
+              id: "email",
+              defaultValue: attendee?.email || "",
+              onChange: (e) => handleInputChange(e, setAttendeeToEdit),
+              placeholder: "אימייל",
+              type: "email",
+            }}
+            labelProps={{
+              htmlFor: "email",
+              children: "אימייל",
+            }}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <button className="bg-green-900 text-main-white rounded-lg" onClick={onClick} type="button">
+              שמור
+            </button>
+            <button className="bg-main-bg text-main-white rounded-lg" onClick={handleModel} type="button">
+              בטל
+            </button>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <DialogClose asChild>
-              <Button onClick={onClick} type="button">
-                Save changes
-              </Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </div>
-    </Dialog>
+
+        </div>
+      </ModelOverlay>
+    </div>
   );
 }

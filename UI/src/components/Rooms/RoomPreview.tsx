@@ -22,7 +22,7 @@ export default function RoomPreview({
   const { id, name, status, capacity, floor, imageUrl } = room;
   const isDeleting = useIsDeleting();
 
-  const liStyle =  cn(isRoomList ? "" : "grid grid-cols-2 items-center","rounded-2xl shadow-[0_0_0_1px_var(--color-main-white)]");
+  const liStyle =  cn(isRoomList ? "" : "grid grid-cols-2 items-center","rounded-2xl border border-main-white");
 
   const imgStyle = cn(isRoomList ? "rounded-t-2xl" : "h-full object-cover rounded-r-2xl");
 

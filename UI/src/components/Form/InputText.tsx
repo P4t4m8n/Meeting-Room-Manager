@@ -28,12 +28,14 @@ export default function InputText({
     inputClassName
   );
   const labelStyle = cn("font-semibold text-main-white", labelClassName);
+
+  const inputType = restInputProps.type || "text";
   return (
     <div className={divStyle} {...restDivProps}>
       <label {...restLabelProps} className={labelStyle}>
         {labelChildren}
       </label>
-      <input {...restInputProps} className={inputStyle} type="text" />
+      <input {...restInputProps} className={inputStyle} type={inputType} />
       {divChildren}
     </div>
   );

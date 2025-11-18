@@ -19,9 +19,7 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
 };
 export interface IBookingDTO extends IDTO {
   startTime?: string;
-  startDate?: string;
   endTime?: string;
-  endDate?: string;
   bufferMinutes?: number;
   status?: BookingStatus;
   title?: string;
@@ -29,6 +27,15 @@ export interface IBookingDTO extends IDTO {
   room?: IRoomDTO | null;
   owner?: IUserDTO | null;
   attendees?: IBookingAttendeeDTO[] | null;
+}
+
+export interface IBookingEditDTO extends IBookingDTO {
+  startTimeEdit?: string;
+  startDateEdit?: string;
+  endTimeEdit?: string;
+  endDateEdit?: string;
+  roomId?: string | null;
+  ownerId?: string;
 }
 
 export interface IBookingFilter extends IFilterDTO {

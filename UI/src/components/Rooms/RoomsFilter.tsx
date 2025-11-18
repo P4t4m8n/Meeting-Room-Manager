@@ -5,7 +5,6 @@ import {
   type IRoomFilter,
 } from "../../models/RoomDTO";
 import handleInputChange from "../../utils/form.util";
-import DateTimePickerPopover from "../Calendar/DateTimePickerPopover";
 import toTitle from "@/utils/toTitle";
 import CheckBox from "../Form/CheckBox";
 import NumberInput from "../Form/NumberInput";
@@ -17,6 +16,7 @@ import {
   DrawerTrigger,
 } from "../ui/drawer";
 import IconFilter from "../Icons/IconFilter";
+import Calendar from "../Calendar/Calendar";
 const INITIAL_FILTER: IRoomFilter = {
   startTime: null,
   startDate: null,
@@ -90,8 +90,8 @@ export default function RoomsFilter({ searchRooms }: IRoomsFilterProps) {
             חיפוש מתקדם
           </h4>
           <div className="w-full">
-            <DateTimePickerPopover
-              id="start"
+            <Calendar
+              dateId="start"
               timeSlotsConfig={{
                 startHour: 8,
                 endHour: 18,
@@ -99,12 +99,12 @@ export default function RoomsFilter({ searchRooms }: IRoomsFilterProps) {
               }}
               handleDateChange={handleDateChange}
               selectedTime={startTime}
-              date={startDate ? new Date(startDate) : undefined}
+              selectedDate={startDate ? new Date(startDate) : undefined}
             />
           </div>
           <div className="w-full">
-            <DateTimePickerPopover
-              id="end"
+            <Calendar
+              dateId="end"
               timeSlotsConfig={{
                 startHour: 8,
                 endHour: 18,
@@ -112,7 +112,7 @@ export default function RoomsFilter({ searchRooms }: IRoomsFilterProps) {
               }}
               handleDateChange={handleDateChange}
               selectedTime={endTime}
-              date={endDate ? new Date(endDate) : undefined}
+              selectedDate={endDate ? new Date(endDate) : undefined}
             />
           </div>
           <div className="col-span-2 flex flex-wrap gap-4 justify-center">

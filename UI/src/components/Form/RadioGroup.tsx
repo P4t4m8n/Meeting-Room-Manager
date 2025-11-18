@@ -11,7 +11,7 @@ export default function RadioGroup({
   isCheckedFn,
 }: IRadioGroupProps) {
   return (
-    <ul className="flex gap-2 col-span-2 justify-self-center">
+    <ul className="flex gap-2 col-span-2 justify-self-center justify-center">
       {items.map((item) => (
         <li key={item} className="flex text-main-white items-center gap-2">
           <input

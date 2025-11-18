@@ -10,33 +10,37 @@ import handleInputChange from "@/utils/form.util";
 import toTitle from "@/utils/toTitle";
 
 import AttendeeEdit from "@/components/Bookings/AttendeeEdit";
-import DateTimePickerPopover from "@/components/Calendar/DateTimePickerPopover";
 import InputText from "@/components/Form/InputText";
 import RadioGroup from "@/components/Form/RadioGroup";
 import TextArea from "@/components/Form/TextArea";
 import RoomPreview from "@/components/Rooms/RoomPreview";
+
 import BackButton from "@/components/ui/BackButton";
 
-import type { IBookingAttendeeDTO } from "@/models/BookingAttendeeDTO";
 import {
   BOOKING_STATUS,
   BOOKING_STATUS_LABELS,
   type IBookingDTO,
+  type IBookingEditDTO,
 } from "@/models/BookingDTO";
 import { useAuth } from "@/hooks/useAuth";
-import { TrashIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Calendar from "@/components/Calendar/Calendar";
+import type { IBookingAttendeeDTO } from "@/models/BookingAttendeeDTO";
+import { IconTrash } from "@/components/Icons/IconTrash";
+import type { IBookedDateValue } from "@/interfaces/IBookedDateValue";
 
 export default function BookingEditPage() {
   const { bookingId, roomId } = useParams<{
     bookingId: string;
     roomId: string;
   }>();
-  const [bookingToEdit, setBookingToEdit] = useState<IBookingDTO | null>(null);
+  const [bookingToEdit, setBookingToEdit] = useState<IBookingEditDTO | null>(
+    null
+  );
   const { user } = useAuth();
 
-  console.log("🚀 ~ BookingEditPage ~ bookingToEdit:", bookingToEdit);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
     const init = async () => {
@@ -64,7 +68,22 @@ export default function BookingEditPage() {
           if (!booking) {
             throw AppError.create("Booking not found", 404);
           }
-          setBookingToEdit(booking);
+
+          const [startDateEdit, startTimeEdit] = (
+            booking?.startTime ?? ""
+          ).split("T");
+          const [endDateEdit, endTimeEdit] = (booking?.endTime ?? "").split(
+            "T"
+          );
+
+          const bookingEdit: IBookingEditDTO = {
+            ...booking,
+            startDateEdit,
+            startTimeEdit,
+            endDateEdit,
+            endTimeEdit,
+          };
+          setBookingToEdit(bookingEdit);
           return;
         }
       } catch (error) {
@@ -81,9 +100,9 @@ export default function BookingEditPage() {
     id: string,
     type: "date" | "time"
   ) => {
-    const key = (id + toTitle(type)) as keyof IBookingDTO;
-
-    setBookingToEdit((prev) => ({ ...prev, [key]: value || null }));
+    const key = (id + toTitle(type) + "Edit") as keyof IBookingDTO;
+    const normalized = type === "date" ? toYMD(value) : value;
+    setBookingToEdit((prev) => ({ ...prev, [key]: normalized || null }));
   };
 
   const upsetAttendee = (attendee: IBookingAttendeeDTO) => {
@@ -106,6 +125,62 @@ export default function BookingEditPage() {
     });
   };
 
+  const onSubmit = async (e: React.FormEvent) => {
+    try {
+      e.preventDefault();
+      if (!bookingToEdit) return;
+      setIsSaving(true);
+      console.log(
+        "🚀 ~ onSubmit ~ bookingToEdit.startDateEdit :",
+        bookingToEdit.startDateEdit
+      );
+      console.log(
+        "🚀 ~ onSubmit ~ bookingToEdit.startTimeEdit:",
+        bookingToEdit.startTimeEdit
+      );
+      if (bookingToEdit.startDateEdit || bookingToEdit.startTimeEdit) {
+        const datePart = toYMD(
+          bookingToEdit.startDateEdit ||
+            bookingToEdit.startTime?.split("T")[0] ||
+            ""
+        );
+        const timePart =
+          bookingToEdit.startTimeEdit ||
+          (bookingToEdit.startTime?.slice(11, 16) ?? "");
+        bookingToEdit.startTime = `${datePart}T${timePart}`;
+        console.log("startTime", new Date(bookingToEdit.startTime));
+      }
+
+      if (bookingToEdit.endDateEdit || bookingToEdit.endTimeEdit) {
+        const datePart = toYMD(
+          bookingToEdit.endDateEdit ||
+            bookingToEdit.endTime?.split("T")[0] ||
+            ""
+        );
+        const timePart =
+          bookingToEdit.endTimeEdit ||
+          (bookingToEdit.endTime?.slice(11, 16) ?? "");
+        bookingToEdit.endTime = `${datePart}T${timePart}`;
+        console.log("endTime", new Date(bookingToEdit.endTime));
+      }
+
+      bookingToEdit.roomId = bookingToEdit.room?.id || null;
+
+      delete bookingToEdit.startDateEdit;
+      delete bookingToEdit.startTimeEdit;
+      delete bookingToEdit.endDateEdit;
+      delete bookingToEdit.endTimeEdit;
+      delete bookingToEdit.room;
+      delete bookingToEdit.owner;
+
+      console.log(bookingToEdit);
+    } catch (error) {
+      console.error("Failed to save booking:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -114,14 +189,42 @@ export default function BookingEditPage() {
     return <div>No booking data available.</div>;
   }
 
-  const { startTime, startDate, endTime, endDate, status, title, room } =
-    bookingToEdit;
+  const {
+    startDateEdit,
+    startTimeEdit,
+    endDateEdit,
+    endTimeEdit,
+    status,
+    title,
+    room,
+  } = bookingToEdit;
 
   const titleText = title
     ? title
     : `פגישה בחדר ${bookingToEdit.room?.name || ""}`;
 
   const isAdmin = user?.role === "Admin";
+
+  const bookedValues: IBookedDateValue[] =
+    bookingToEdit?.room?.bookings?.map((b) => ({
+      startValue: new Date(b.startTime ?? ""),
+      endValue: new Date(b.endTime ?? ""),
+    })) || [];
+
+  const timeSlotsConfig = {
+    startHour: 8,
+    endHour: 18,
+    intervalMinutes: 10,
+  };
+
+  const startDateSelectedTime =
+    startDateEdit &&
+    endDateEdit &&
+    startTimeEdit &&
+    new Date(startDateEdit).toDateString() ===
+      new Date(endDateEdit).toDateString()
+      ? addMinutes(startTimeEdit, timeSlotsConfig.intervalMinutes)
+      : undefined;
   return (
     <main className="h-mobile-main flex flex-col gap-4 p-4">
       <header className="inline-flex items-center">
@@ -131,36 +234,26 @@ export default function BookingEditPage() {
         </h2>
       </header>
 
-      <form className="flex flex-col gap-4 h-full">
+      <form className="flex flex-col gap-4 h-full" onSubmit={onSubmit}>
+        <div className="grid  gap-4">
+          <Calendar
+            dateId="start"
+            timeSlotsConfig={timeSlotsConfig}
+            handleDateChange={handleDateChange}
+            selectedTime={startTimeEdit}
+            selectedDate={startDateEdit ? new Date(startDateEdit) : undefined}
+            bookedValues={bookedValues}
+          />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="">
-            <DateTimePickerPopover
-              id="start"
-              timeSlotsConfig={{
-                startHour: 8,
-                endHour: 18,
-                intervalMinutes: 10,
-              }}
-              handleDateChange={handleDateChange}
-              selectedTime={startTime}
-              date={startDate ? new Date(startDate) : undefined}
-            />
-          </div>
-
-          <div className="">
-            <DateTimePickerPopover
-              id="end"
-              timeSlotsConfig={{
-                startHour: 8,
-                endHour: 18,
-                intervalMinutes: 10,
-              }}
-              handleDateChange={handleDateChange}
-              selectedTime={endTime}
-              date={endDate ? new Date(endDate) : undefined}
-            />
-          </div>
+          <Calendar
+            dateId="end"
+            timeSlotsConfig={timeSlotsConfig}
+            handleDateChange={handleDateChange}
+            selectedTime={endTimeEdit}
+            selectedDate={endDateEdit ? new Date(endDateEdit) : undefined}
+            bookedValues={bookedValues}
+            startDateSelectedTime={startDateSelectedTime}
+          />
         </div>
 
         <InputText
@@ -198,10 +291,10 @@ export default function BookingEditPage() {
             </p>
           </div>
         )}
-        
-        <div className="shadow-[0_0_0_1px_var(--color-main-white-border)] p-1 rounded text-main-white">
+
+        <div className="border  p-1 rounded-lg text-main-white">
           <h3 className="font-semibold">מוזמנים</h3>
-          <ul className="flex flex-col gap-2 p-1 h-32 overflow-auto">
+          <ul className="flex flex-col gap-2 p-1 h-28 overflow-auto">
             <li className="flex items-center justify-between">
               <p>הוסף מוזמן</p>
               <AttendeeEdit
@@ -227,7 +320,7 @@ export default function BookingEditPage() {
                         saveAttendee={upsetAttendee}
                       />
                       <button className="bg-inherit p-0">
-                        <TrashIcon className="bg-inherit h-5 w-5 leading-0" />
+                        <IconTrash className="bg-inherit h-5 w-5 leading-0" />
                       </button>
                     </div>
                   </li>
@@ -236,14 +329,35 @@ export default function BookingEditPage() {
           </ul>
         </div>
 
-        {room ? (
- 
-            <RoomPreview room={room} isRoomList={false} />
-     
-        ) : null}
+        {room ? <RoomPreview room={room} isRoomList={false} /> : null}
 
-        <Button variant="outline" className="mt-auto" >{bookingId ? "שמור שינויים" : "צור פגישה"}</Button>
+        <button
+          disabled={isSaving}
+          className="mt-auto bg-main-white rounded-lg py-1 "
+        >
+          {bookingId ? "שמור שינויים" : "צור פגישה"}
+        </button>
       </form>
     </main>
   );
 }
+const addMinutes = (time: string, minutes: number) => {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  const hh = Math.floor(total / 60);
+  const mm = total % 60;
+  return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
+};
+
+const toYMD = (value: string) => {
+  if (!value) return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (!isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  return value.split("T")[0];
+};
