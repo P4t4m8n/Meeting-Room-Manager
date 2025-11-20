@@ -87,7 +87,7 @@ BEGIN
         Status NVARCHAR(20) NOT NULL DEFAULT 'Active',
         CONSTRAINT chk_bookings_status CHECK (Status IN ('Active', 'Cancelled', 'Completed')),
         CalendarEventId NVARCHAR(255) NULL,
-        Summary NVARCHAR(255) NULL,
+        Title NVARCHAR(255) NULL,
         Description NVARCHAR(1000) NULL,
         CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
         UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),

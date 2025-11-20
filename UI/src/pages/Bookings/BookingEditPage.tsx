@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { bookingsService } from "@/services/bookingService";
 import { roomsService } from "@/services/room.service";
@@ -38,6 +38,7 @@ export default function BookingEditPage() {
     null
   );
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -59,6 +60,7 @@ export default function BookingEditPage() {
           }
           const emptyBooking = bookingUtil.getEmpty();
           emptyBooking.room = room;
+          emptyBooking.title = `פגישה בחדר ${room.name}`;
           setBookingToEdit(emptyBooking);
           return;
         }
@@ -130,14 +132,7 @@ export default function BookingEditPage() {
       e.preventDefault();
       if (!bookingToEdit) return;
       setIsSaving(true);
-      console.log(
-        "🚀 ~ onSubmit ~ bookingToEdit.startDateEdit :",
-        bookingToEdit.startDateEdit
-      );
-      console.log(
-        "🚀 ~ onSubmit ~ bookingToEdit.startTimeEdit:",
-        bookingToEdit.startTimeEdit
-      );
+
       if (bookingToEdit.startDateEdit || bookingToEdit.startTimeEdit) {
         const datePart = toYMD(
           bookingToEdit.startDateEdit ||
@@ -148,7 +143,6 @@ export default function BookingEditPage() {
           bookingToEdit.startTimeEdit ||
           (bookingToEdit.startTime?.slice(11, 16) ?? "");
         bookingToEdit.startTime = `${datePart}T${timePart}`;
-        console.log("startTime", new Date(bookingToEdit.startTime));
       }
 
       if (bookingToEdit.endDateEdit || bookingToEdit.endTimeEdit) {
@@ -161,7 +155,6 @@ export default function BookingEditPage() {
           bookingToEdit.endTimeEdit ||
           (bookingToEdit.endTime?.slice(11, 16) ?? "");
         bookingToEdit.endTime = `${datePart}T${timePart}`;
-        console.log("endTime", new Date(bookingToEdit.endTime));
       }
 
       bookingToEdit.roomId = bookingToEdit.room?.id || null;
@@ -173,7 +166,16 @@ export default function BookingEditPage() {
       delete bookingToEdit.room;
       delete bookingToEdit.owner;
 
-      console.log(bookingToEdit);
+      const { data: savedBooking } = await bookingsService.save(bookingToEdit);
+
+      if (!savedBooking) {
+        throw AppError.create(
+          "Failed to save booking - this error should not appear",
+          500
+        );
+      }
+
+      navigate(`/bookings/${savedBooking.id}`);
     } catch (error) {
       console.error("Failed to save booking:", error);
     } finally {
@@ -225,6 +227,7 @@ export default function BookingEditPage() {
       new Date(endDateEdit).toDateString()
       ? addMinutes(startTimeEdit, timeSlotsConfig.intervalMinutes)
       : undefined;
+
   return (
     <main className="h-mobile-main flex flex-col gap-4 p-4">
       <header className="inline-flex items-center">

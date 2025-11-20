@@ -27,10 +27,9 @@ namespace API.Services
         {
             try
             {
-
                 string scopeURL1 = "https://accounts.google.com/o/oauth2/auth?redirect_uri={0}&prompt={1}&response_type={2}&client_id={3}&scope={4}&access_type={5}";
                 var redirectURL = _config["Google:RedirectUri"] ?? "";
-                string prompt = "consent";
+                string prompt = "select_account";
                 string response_type = "code";
                 string clientID = _config["Google:ClientId"] ?? "";
                 string scope = "https://www.googleapis.com/auth/calendar openid profile email";

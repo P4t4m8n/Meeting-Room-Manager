@@ -274,14 +274,15 @@ export default function Calendar({
           className="absolute top-[calc(100%+.25rem)]  grid gap-2
          bg-main-white border rounded-xl z-50 p-4 w-[calc(100svw-2rem)]"
         >
-          {selectedDate ? (
-            <button
-              onClick={onClearSelection}
-              className="px-3 py-1 text-xs bg-main-orange hover:bg-main-orange/90  text-red-700 rounded-md transition-colors"
-            >
-              Clear
-            </button>
-          ) : null}
+          <button
+            disabled={!selectedDate}
+            onClick={onClearSelection}
+            className={
+              `px-3 py-1 text-xs bg-main-orange hover:bg-main-orange/90  text-red-700 ${!selectedDate ? "opacity-50 cursor-not-allowed" : ""} rounded-md transition-colors`
+            }
+          >
+            Clear
+          </button>
 
           <div className="flex items-center justify-between">
             <CalendarNavigation
@@ -310,21 +311,24 @@ export default function Calendar({
               ))}
             </ul>
             <ul className="grid grid-cols-7 ">{renderCalendarDays()}</ul>
-            <CalenderTimeModel
-              bookedTimes={bookedTimes}
-              selectedTime={selectedTime}
-              selectTime={selectTime}
-              timeSlotsConfig={timeSlotsConfig}
-              startDateSelectedTime={startDateSelectedTime}
-            />
+   
+              <CalenderTimeModel
+                bookedTimes={bookedTimes}
+                selectedTime={selectedTime}
+                selectTime={selectTime}
+                selectedDate={selectedDate}
+                timeSlotsConfig={timeSlotsConfig}
+                startDateSelectedTime={startDateSelectedTime}
+              />
+           
           </div>
           <button
             className={`bg-inherit border p-2 hover:bg-main-orange h-10
-                hover:text-white rounded transition-all duration-300
+                hover:text-white rounded-lg transition-all duration-300
                 hover:cursor-pointer  `}
             onClick={handleModel}
           >
-            Close
+            סגור
           </button>
         </div>
       )}

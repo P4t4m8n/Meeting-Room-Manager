@@ -1,5 +1,6 @@
 import IconConference from "@/components/Icons/IconConference";
 import IconPeople from "@/components/Icons/IconPeople";
+import IconProjector from "@/components/Icons/IconProjector";
 import IconVideoConf from "@/components/Icons/IconVideoConf";
 import RoomAmenity from "@/components/Rooms/RoomAmenity";
 import RoomFloor from "@/components/Rooms/RoomFloor";
@@ -9,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePageBack } from "@/hooks/usePageBack";
 import type { IRoomDTO } from "@/models/RoomDTO";
 import { roomsService } from "@/services/room.service";
-import { ProjectorIcon } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 
@@ -74,7 +74,7 @@ export default function RoomDetailsPage() {
   } = room;
 
   const amities = [
-    { name: "מקרן", available: hasProjector, Icon: ProjectorIcon },
+    { name: "מקרן", available: hasProjector, Icon: IconProjector },
     { name: "חיבור לטימס", available: hasTeamMeeting, Icon: IconVideoConf },
     { name: "שיחות ועידה", available: hasConferenceCall, Icon: IconConference },
   ];
@@ -92,7 +92,7 @@ export default function RoomDetailsPage() {
         <RoomFloor floor={floor ?? 0} />
       </div>
 
-      <div className=" shadow-[0_0_0_1px_var(--color-main-white-border)] p-4 rounded grid grid-cols-[3rem_1fr] grid-rows-[auto_auto] gap-x-4">
+      <div className="border border-main-white p-4 rounded grid grid-cols-[3rem_1fr] grid-rows-[auto_auto] gap-x-4">
         <IconPeople className="aspect-square w-full h-full bg-main-white stroke-main-bg fill-none row-span-2 rounded-lg p-1" />
         <span className="text-sm  text-main-white-border">קיבולת</span>
         <p className="text-xl font-semibold text-main-white">
@@ -100,7 +100,7 @@ export default function RoomDetailsPage() {
         </p>
       </div>
 
-      <ul className=" shadow-[0_0_0_1px_var(--color-main-white-border)] rounded p-4  grid gap-2 ">
+      <ul className="border border-main-white rounded p-4  grid gap-2 ">
         {amities.map((amenity) => (
           <Fragment key={amenity.name}>
             <RoomAmenity {...amenity} />

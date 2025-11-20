@@ -10,7 +10,7 @@ namespace API.Dtos.Booking
         public int? BufferMinutes { get; set; }
         public RoomBookingStatus? Status { get; set; }
         public string? CalendarEventId { get; set; }
-        public string? Summary { get; set; }
+        public string? Title { get; set; }
         public string? Description { get; set; }
         // Navigation properties
         public Guid RoomId { get; set; }

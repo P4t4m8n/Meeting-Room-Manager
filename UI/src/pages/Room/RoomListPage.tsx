@@ -5,8 +5,12 @@ import { roomsService } from "../../services/room.service";
 import RoomsFilter from "../../components/Rooms/RoomsFilter";
 import RoomsList from "@/components/Rooms/RoomsList";
 import { IsDeletingContext } from "@/context/isDeletingContext";
+import { useAuth } from "@/hooks/useAuth";
+
+
 export default function RoomListPage() {
   const [rooms, setRooms] = useState<IRoomDTO[]>([]);
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
@@ -42,14 +46,18 @@ export default function RoomListPage() {
   if (isLoading) {
     return <div>Loading...</div>;
   }
+
+  const isAdmin = user?.role === "Admin";
   return (
-    <main className="grid grid-rows-[auto_auto_1fr] gap-4  h-mobile-admin">
-      <div className="px-4">
-        <Link className="bg-gray-600 p-2" to="edit">
+    <main className="grid grid-rows-[auto_auto_1fr] gap-4 pt-4  h-mobile-main">
+      {isAdmin && (
+        <Link
+          className="bg-main-white p-2 h-10 w-fit mr-4 rounded-lg"
+          to="edit"
+        >
           הוספת חדר
         </Link>
-      </div>
-
+      )}
       <RoomsFilter searchRooms={searchRooms} />
 
       <IsDeletingContext.Provider value={isDeleting}>

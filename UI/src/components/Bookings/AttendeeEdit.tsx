@@ -19,7 +19,6 @@ export default function AttendeeEdit({
   const { isOpen, modelRef, setIsOpen, handleModel } = useModel<HTMLDivElement>(
     {}
   );
-  console.log("🚀 ~ AttendeeEdit ~ isOpen:", isOpen);
 
   const [attendeeToEdit, setAttendeeToEdit] =
     useState<IBookingAttendeeDTO>(attendee);

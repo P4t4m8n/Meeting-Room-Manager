@@ -32,7 +32,7 @@ namespace API.Services
             parameters.Add("@StartDate", queryParams?.StartDate);
             parameters.Add("@EndDate", queryParams?.EndDate);
             parameters.Add("@RoomId", queryParams?.RoomId);
-            parameters.Add("@Status", queryParams?.Status);
+            parameters.Add("@Status", queryParams?.Status.ToString());
             parameters.Add("@UserId", queryParams?.UserId);
 
             return await QueryAndMapBookingsAsync(sql, parameters);

@@ -7,6 +7,7 @@ interface ICalenderTimeModelProps {
   timeSlotsConfig: ITimeSlotConfig;
   selectTime: (time: string) => void;
   selectedTime?: string | null;
+  selectedDate?: Date | null;
   startDateSelectedTime?: string | null; // In case start time selected to filter the times before it
 }
 
@@ -15,6 +16,7 @@ export default function CalenderTimeModel({
   timeSlotsConfig,
   selectTime,
   selectedTime,
+  selectedDate,
   startDateSelectedTime,
 }: ICalenderTimeModelProps) {
   const { isOpen, modelRef, handleModel, setIsOpen } = useModel<HTMLDivElement>(
@@ -68,14 +70,32 @@ export default function CalenderTimeModel({
         )
       : 0;
 
-    const visible =
+    let visible =
       firstSelectableIndex > 0
         ? timeSlots.slice(firstSelectableIndex)
         : timeSlots;
 
+    const isDateToday = selectedDate
+      ? new Date().toDateString() === selectedDate.toDateString()
+      : false;
+
+    if (isDateToday) {
+      //remove times that are earlier than now
+      const now = new Date();
+      const currentTimeStr = `${now
+        .getHours()
+        .toString()
+        .padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+      visible = visible.filter((time) => {
+        const timeStr = time.replace("--booked", "");
+        return toMinutes(timeStr) >= toMinutes(currentTimeStr);
+      });
+    }
+
     return visible.map((time) => {
       const isBooked = time.endsWith("--booked");
       const displayTime = isBooked ? time.replace("--booked", "") : time;
+
       const baseStyle =
         " w-full h-8 text-sm rounded-md transition-all duration-200  place-self-center";
       const className = cleanClassName(
@@ -106,11 +126,15 @@ export default function CalenderTimeModel({
     >
       <button
         type="button"
-        className={` w-full py-1 mb-1  ${isOpen ? "border-b" : ""}`}
+        className={`w-full py-1 mb-1  ${isOpen ? "border-b" : ""} ${
+          !selectedDate ? "opacity-50 cursor-not-allowed" : ""
+        }`}
         onClick={handleModel}
+        disabled={!selectedDate}
       >
         {selectedTime ? selectedTime : "בחר זמן"}
       </button>
+
       {isOpen && (
         <ul className="h-24 overflow-auto absolute top-full left-1/2 -translate-x-1/2 w-[calc(100%+2px)] border-black bg-main-white rounded border border-t-0 rounded-t-none">
           {renderDayTimeSlots()}

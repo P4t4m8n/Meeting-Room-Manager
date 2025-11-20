@@ -90,30 +90,30 @@ namespace API.Controllers
             return Ok(userDto);
         }
 
-        // [AllowAnonymous]
-        // [HttpPost("sign-up")]
-        // public async Task<ActionResult<UserDto>> SignUp(AuthSignUpDto signUpDto)
-        // {
+        [AllowAnonymous]
+        [HttpPost("sign-up")]
+        public async Task<ActionResult<UserDto>> SignUp(AuthSignUpDto signUpDto)
+        {
 
-        //     if (signUpDto.Password != signUpDto.ConfirmPassword)
-        //     {
-        //         return BadRequest(new { message = "Passwords do not match" });
-        //     }
+            if (signUpDto.Password != signUpDto.ConfirmPassword)
+            {
+                return BadRequest(new { message = "Passwords do not match" });
+            }
 
-        //     UserDto userDto = await _authService.CreateAuthUser(signUpDto);
-        //     string token = _authService.CreateToken(userDto.Id.ToString()!);
+            UserDto userDto = await _authService.CreateAuthUser(signUpDto);
+            string token = _authService.CreateToken(userDto.Id.ToString()!);
 
-        //     Response.Cookies.Append("AuthToken", token, new CookieOptions
-        //     {
-        //         HttpOnly = true,
-        //         Secure = true, // Only send over HTTPS
-        //         SameSite = SameSiteMode.Strict,
-        //         Expires = DateTimeOffset.UtcNow.AddDays(1)
-        //     });
+            Response.Cookies.Append("AuthToken", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true, // Only send over HTTPS
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(1)
+            });
 
 
-        //     return Ok(userDto);
-        // }
+            return Ok(userDto);
+        }
 
         [AllowAnonymous]
         [HttpGet]

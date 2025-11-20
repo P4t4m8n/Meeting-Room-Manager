@@ -11,7 +11,7 @@ namespace API.Models
         public int BufferMinutes { get; set; }
         public RoomBookingStatus Status { get; set; } = RoomBookingStatus.Active;
         public string? CalendarEventId { get; set; }
-        public string? Summary { get; set; }
+        public string? Title { get; set; }
         public string? Description { get; set; }
 
         // Navigation properties
